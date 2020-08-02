@@ -59,7 +59,8 @@ var Dbg *Debugger
 
 // Debugger writes debug messages to a file (if defined)
 type Debugger struct {
-	file *os.File // reference to debug file (or nil if not defined)
+	file    *os.File // reference to debug file (or nil if not defined)
+	console bool
 }
 
 // SetDebugger instantiates a new Debugger
@@ -68,16 +69,21 @@ func SetDebugger(file string) {
 	if len(file) == 0 {
 		Dbg.file = nil
 	} else {
-		var err error
-		if Dbg.file, err = os.Create(file); err != nil {
-			Fatal(err.Error())
+		if file == "-" {
+			Dbg.console = true
+			Dbg.file = os.Stdout
+		} else {
+			var err error
+			if Dbg.file, err = os.Create(file); err != nil {
+				Fatal(err.Error())
+			}
 		}
 	}
 }
 
 // Close debugger file
 func (dbg *Debugger) Close() {
-	if dbg.file != nil {
+	if dbg.file != nil && !dbg.console {
 		dbg.file.Close()
 	}
 }
