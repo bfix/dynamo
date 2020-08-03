@@ -125,16 +125,6 @@ var testSet = []*testData{
 		err:    ErrParseLineLength,
 	},
 	//------------------------------------------------------------------
-	// Space in equation
-	&testData{
-		name: "eqn: syntax",
-		src: []string{
-			"L INV.K = INV.J + DT * CHNG.JK",
-		},
-		lineno: 1,
-		err:    ErrParseInvalidSpace,
-	},
-	//------------------------------------------------------------------
 	// Invalid variable name (too long)
 	&testData{
 		name: "eqn: var name too long",
@@ -169,7 +159,7 @@ var testSet = []*testData{
 func TestModel(t *testing.T) {
 	failed := 0
 	for _, td := range testSet {
-		mdl := NewModel()
+		mdl := NewModel("", "")
 		buf := new(bytes.Buffer)
 		for _, line := range td.src {
 			buf.WriteString(line + "\n")
