@@ -83,21 +83,21 @@ func SetDebugger(file string) {
 
 // Close debugger file
 func (dbg *Debugger) Close() {
-	if dbg.file != nil && !dbg.console {
+	if dbg != nil && dbg.file != nil && !dbg.console {
 		dbg.file.Close()
 	}
 }
 
 // Msg to write a plain message into the debugger file
 func (dbg *Debugger) Msg(msg string) {
-	if dbg.file != nil {
+	if dbg != nil && dbg.file != nil {
 		dbg.file.WriteString(msg + "\n")
 	}
 }
 
 // Msgf to write a formatted message into the debugger file
 func (dbg *Debugger) Msgf(format string, args ...interface{}) {
-	if dbg.file != nil {
+	if dbg != nil && dbg.file != nil {
 		msg := fmt.Sprintf(format, args...)
 		dbg.file.WriteString(msg)
 	}
