@@ -480,7 +480,7 @@ func table(args []string, mdl *Model, mode int) (val Variable, res *Result) {
 
 	if mode == 2 {
 		// polynominal interpolation
-		val = Variable(newton(pos, step/(max-min), tbl.Data))
+		val = Variable(newton(pos, tbl.A_j))
 	} else {
 		// linear inter-/extrapolation
 		if idx < 0 {
@@ -506,16 +506,9 @@ func table(args []string, mdl *Model, mode int) (val Variable, res *Result) {
 
 // Newton polynominal interpolation that relies on 'divided differences'.
 // 'x' is normalized [0,1]; points are equidistant with given step size.
-func newton(x, step float64, pnts []float64) float64 {
-	var a_mj func(int, int) float64
-	a_mj = func(m, j int) (y float64) {
-		if m == j {
-			y = pnts[m]
-		} else {
-			y = (a_mj(m+1, j) - a_mj(m, j-1)) / (float64(j-m) * step)
-		}
-		return
-	}
+func newton(x float64, a_j []float64) float64 {
+	num := len(a_j)
+	step := 1.0 / float64(num-1)
 	n_j := func(x float64, j int) float64 {
 		y := 1.0
 		for i := 0; i < j; i++ {
@@ -525,8 +518,8 @@ func newton(x, step float64, pnts []float64) float64 {
 	}
 	// polynominal interpolation
 	y := 0.0
-	for j := 0; j < len(pnts); j++ {
-		y += a_mj(0, j) * n_j(x, j)
+	for j := 0; j < num; j++ {
+		y += a_j[j] * n_j(x, j)
 	}
 	return y
 }

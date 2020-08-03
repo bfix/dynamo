@@ -39,11 +39,15 @@ func TestFcnTable(t *testing.T) {
 }
 
 func TestFcnTabpl(t *testing.T) {
-	pnts := []float64{0, 2.8, 5.5, 8, 9.5, 10}
+	pnts := []string{"0", "2.8", "5.5", "8", "9.5", "10"}
+	tbl, res := NewTable(pnts)
+	if !res.Ok {
+		t.Fatal(res.Err)
+	}
 	for x := 0; x <= 5; x++ {
-		y := newton(float64(x)/5, 0.2, pnts)
-		if math.Abs(y-pnts[x]) > 1e-9 {
-			t.Fatalf("Value mismatch: %f != %f", y, pnts[x])
+		y := newton(float64(x)/5, tbl.A_j)
+		if math.Abs(y-tbl.Data[x]) > 1e-9 {
+			t.Fatalf("Value mismatch: %f != %f", y, tbl.Data[x])
 		}
 	}
 }
