@@ -53,6 +53,7 @@ type State map[string]Variable
 // Table is a list of values
 type Table struct {
 	Data []float64
+	A_j  []float64
 }
 
 // NewTable creates a new Table from a given list of (stringed) values.
@@ -74,6 +75,22 @@ func NewTable(list []string) (tbl *Table, res *Result) {
 			break
 		}
 		tbl.Data[i] = val
+	}
+
+	// precompute coefficients for Newton polynominal interpolation
+	step := 1. / float64(num-1)
+	var a_mj func(int, int) float64
+	a_mj = func(m, j int) (y float64) {
+		if m == j {
+			y = tbl.Data[m]
+		} else {
+			y = (a_mj(m+1, j) - a_mj(m, j-1)) / (float64(j-m) * step)
+		}
+		return
+	}
+	tbl.A_j = make([]float64, num)
+	for j := 0; j < num; j++ {
+		tbl.A_j[j] = a_mj(0, j)
 	}
 	return
 }
