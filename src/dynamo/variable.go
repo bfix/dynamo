@@ -25,6 +25,7 @@ import (
 	"go/ast"
 	"reflect"
 	"strings"
+	"unicode"
 )
 
 //======================================================================
@@ -66,6 +67,16 @@ const (
 	NAME_MATCH     = 7 // names match fully
 )
 
+var (
+	autoId = 0 // last automatic variable identifier
+)
+
+// NewAutoVar generates a new automatic variable name
+func NewAutoVar() string {
+	autoId++
+	return fmt.Sprintf("_%d", autoId)
+}
+
 // Name of a state variable
 type Name struct {
 	Name  string // Name of the variable
@@ -83,8 +94,15 @@ func NewName(v ast.Expr) (name *Name, res *Result) {
 		name.Kind = NAME_KIND_CONST
 		name.Stage = NAME_STAGE_NONE
 		name.Name = x.Name
-		if strict && len(name.Name) > MAX_NAME_LENGTH {
-			res = Failure(ErrParseNameLength+": %d", len(name.Name))
+		if strict {
+			if len(name.Name) > MAX_NAME_LENGTH {
+				res = Failure(ErrParseNameLength+": %d", len(name.Name))
+			} else {
+				start := []rune(name.Name)[0]
+				if !unicode.IsLetter(start) && start != '_' {
+					res = Failure(ErrParseInvalidName+": %s", name.Name)
+				}
+			}
 		}
 		return
 	case *ast.SelectorExpr:
