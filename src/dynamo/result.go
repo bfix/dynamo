@@ -35,6 +35,8 @@ const (
 	ErrModelFunctionArg       = "Invalid function argument"
 	ErrModelNoVariable        = "No variable found"
 	ErrModelNoSuchTable       = "No such table"
+	ErrModelWrongTableSize    = "Tabe size mismatch"
+	ErrModelNoTime            = "No TIME defined"
 
 	ErrParseLineLength      = "Line too long"
 	ErrParseInvalidSpace    = "Space in equation"
@@ -47,6 +49,7 @@ const (
 	ErrParseTableTooSmall   = "Not enough table elements"
 	ErrParseUnknownFunction = "Unknown function"
 	ErrParseInvalidNumArgs  = "Invalid number of arguments"
+	ErrParsePseudoDepth     = "Invalid nesting for pseudo function"
 )
 
 // Result represents the response of a method call in the Dynamo framework.
