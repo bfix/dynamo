@@ -35,16 +35,24 @@ const (
 	MAX_LINE_LENGTH = 72 // max. length of line in 'strict' mode
 )
 
+// Line represents a line in a DYNAMO source code stream. It consists of a
+// mode, a statement and an optional comment
+type Line struct {
+	Mode    string
+	Stmt    string
+	Comment string
+}
+
 // Parse a DYNAMO source file and return a model instance for it.
 func (mdl *Model) Parse(rdr io.Reader) *Result {
 
 	// parse source file
 	brdr := bufio.NewReader(rdr)
 	var (
-		stmtLine string
-		stmtMode string
-		stmtNo   int
-		mode     string
+		stmt    *Line
+		stmtNo  int
+		mode    string
+		comment string
 	)
 	lineNo := 0
 	for {
@@ -58,7 +66,7 @@ func (mdl *Model) Parse(rdr io.Reader) *Result {
 		if err != nil {
 			if err == io.EOF {
 				// add last pending statement
-				return mdl.AddStatement(stmtLine, stmtMode).SetLine(stmtNo)
+				return mdl.AddStatement(stmt).SetLine(stmtNo)
 			}
 			return Failure(err).SetLine(stmtNo)
 		}
@@ -67,21 +75,32 @@ func (mdl *Model) Parse(rdr io.Reader) *Result {
 		if pos := strings.Index(line, " "); pos != -1 {
 			mode = line[:pos]
 			line = strings.TrimSpace(line[pos:])
+			if strings.Index("LRCNA", mode) != -1 {
+				if pos := strings.Index(line, " "); pos != -1 {
+					comment = strings.TrimSpace(line[pos:])
+					line = line[:pos]
+				}
+			}
 		} else {
 			mode = line
 			line = ""
 		}
 		// extension line (continuation)?
 		if mode == "X" {
-			stmtLine += line
+			stmt.Stmt += line
+			if len(comment) > 0 {
+				stmt.Comment += " " + comment
+			}
 			continue
 		}
 		// process pending statement
-		if res := mdl.AddStatement(stmtLine, stmtMode); !res.Ok {
+		if res := mdl.AddStatement(stmt); !res.Ok {
 			return res.SetLine(stmtNo)
 		}
-		stmtMode = mode
-		stmtLine = line
+		stmt = new(Line)
+		stmt.Mode = mode
+		stmt.Stmt = line
+		stmt.Comment = comment
 		stmtNo = lineNo
 	}
 	return Success().SetLine(lineNo)
