@@ -45,45 +45,96 @@ type Equation struct {
 	stmt         string   // complete equation in DYNAMO notation
 }
 
-// NewEquation converts a statement into an equation instance
-func NewEquation(stmt, mode string) (eqn *Equation, res *Result) {
+// NewEquation converts a statement into one or more equation instances
+func NewEquation(stmt *Line) (eqns []*Equation, res *Result) {
 	res = Success()
 
 	// check for spaces in equation
-	if strings.Index(stmt, " ") != -1 {
+	if strings.Index(stmt.Stmt, " ") != -1 {
 		res = Failure(ErrParseInvalidSpace)
 		return
 	}
-	// prepare equation instance
-	eqn = &Equation{
-		stmt:         stmt,
-		Mode:         mode,
-		Dependencies: make([]*Name, 0),
-	}
 	// expand multiplication shortcut
-	stmt = strings.ReplaceAll(stmt, ")(", ")*(")
+	line := strings.ReplaceAll(stmt.Stmt, ")(", ")*(")
 	// assignment work-around (HACK!)
-	stmt = strings.ReplaceAll(stmt, "=", "==")
+	line = strings.ReplaceAll(line, "=", "==")
 	// use Go to parse expression
-	expr, err := parser.ParseExpr(stmt)
+	expr, err := parser.ParseExpr(line)
 	if err != nil {
 		res = Failure(err)
 		return
 	}
 	switch x := expr.(type) {
 	case *ast.BinaryExpr:
+		// prepare equation instance
+		eqn := &Equation{
+			stmt:         stmt.Stmt,
+			Mode:         stmt.Mode,
+			Dependencies: make([]*Name, 0),
+		}
+		eqn.Formula = x.Y
+
 		// Handle LEFT side of equation
 		if eqn.Target, res = NewName(x.X); !res.Ok {
 			return
 		}
-		if mode == "N" {
+		if stmt.Mode == "N" {
 			eqn.Target.Kind = NAME_KIND_LEVEL
 			eqn.Target.Stage = NAME_STAGE_NONE
 		}
 
-		// Handle RIGHT side of equation
-		eqn.Dependencies, res = checkFormula(x.Y, mode)
-		eqn.Formula = x.Y
+		// Handle RIGHT side of equation recursively
+		var check func(ast.Expr, int) *Result
+		check = func(f ast.Expr, depth int) (res *Result) {
+			res = Success()
+			switch x := f.(type) {
+			case *ast.Ident, *ast.SelectorExpr:
+				var name *Name
+				if name, res = NewName(x); res.Ok {
+					if stmt.Mode == "N" {
+						name.Stage = NAME_STAGE_NONE
+					}
+					eqn.Dependencies = append(eqn.Dependencies, name)
+				}
+			case *ast.BinaryExpr:
+				if res = check(x.X, depth+1); res.Ok {
+					res = check(x.Y, depth+1)
+				}
+			case *ast.ParenExpr:
+				res = check(x.X, depth+1)
+			case *ast.BasicLit:
+				// skipped intentionally
+			case *ast.UnaryExpr:
+				res = check(x.X, depth+1)
+			case *ast.CallExpr:
+				var name *Name
+				if name, res = NewName(x.Fun); !res.Ok {
+					break
+				}
+				Dbg.Msgf("Calling '%s'\n", name.Name)
+				if eqns, res = HasFunction(eqn.Target, name.Name, x.Args, depth); !res.Ok {
+					break
+				}
+				Dbg.Msgf("Pseudo: %v\n", eqns)
+				if len(eqns) == 0 {
+					// check function arguments
+					for _, arg := range x.Args {
+						if res = check(arg, depth+1); !res.Ok {
+							break
+						}
+					}
+				}
+			default:
+				res = Failure(ErrParseSyntax+": %v\n", reflect.TypeOf(x))
+			}
+			return
+		}
+
+		res = check(x.Y, 0)
+		if len(eqns) == 0 {
+			eqns = append(eqns, eqn)
+		}
+		return
 
 	default:
 		res = Failure(ErrParseSyntax+": %v\n", reflect.TypeOf(x))
@@ -115,55 +166,6 @@ func (eqn *Equation) Eval(mdl *Model) (res *Result) {
 	if val, res = eval(eqn.Formula, mdl); res.Ok {
 		res = mdl.Set(eqn.Target, val)
 	}
-	return
-}
-
-// Check a formula
-func checkFormula(f ast.Expr, mode string) (deps []*Name, res *Result) {
-	res = Success()
-	deps = make([]*Name, 0)
-
-	var check func(ast.Expr) *Result
-	check = func(f ast.Expr) (res *Result) {
-		res = Success()
-		switch x := f.(type) {
-		case *ast.Ident, *ast.SelectorExpr:
-			var name *Name
-			if name, res = NewName(x); res.Ok {
-				if mode == "N" {
-					name.Stage = NAME_STAGE_NONE
-				}
-				deps = append(deps, name)
-			}
-		case *ast.BinaryExpr:
-			if res = check(x.X); res.Ok {
-				res = check(x.Y)
-			}
-		case *ast.ParenExpr:
-			res = check(x.X)
-		case *ast.BasicLit:
-			// skipped intentionally
-		case *ast.UnaryExpr:
-			res = check(x.X)
-		case *ast.CallExpr:
-			var name *Name
-			if name, res = NewName(x.Fun); !res.Ok {
-				break
-			}
-			if res = HasFunction(name.Name, len(x.Args)); !res.Ok {
-				break
-			}
-			for _, arg := range x.Args {
-				if res = check(arg); !res.Ok {
-					break
-				}
-			}
-		default:
-			res = Failure(ErrParseSyntax+": %v\n", reflect.TypeOf(x))
-		}
-		return
-	}
-	res = check(f)
 	return
 }
 

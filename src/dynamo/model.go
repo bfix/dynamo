@@ -144,19 +144,35 @@ func (mdl *Model) Dump() {
 // The statement must be formatted according to the DYNAMO language rules.
 // The statement describes either equations or runtime instructions, that
 // govern the evolution of the system state.
-func (mdl *Model) AddStatement(stmt, mode string) (res *Result) {
+func (mdl *Model) AddStatement(stmt *Line) (res *Result) {
 	res = Success()
 
-	// skip empty statements
-	if len(stmt) == 0 {
+	// skip empty and detect invalid statements
+	if stmt == nil {
 		return
 	}
+	line := stmt.Stmt
+	if len(line) == 0 {
+		return
+	}
+	prepLine := func() *Result {
+		if strings.Index(line, " ") != -1 {
+			if strict {
+				return Failure(ErrParseInvalidSpace)
+			} else {
+				line = strings.Replace(line, " ", "", -1)
+			}
+		}
+		return Success()
+	}
+	Dbg.Msgf("AddStmt: [%s] %s\n", stmt.Mode, stmt.Stmt)
+
 	// handle statement based on its mode
-	switch mode {
+	switch stmt.Mode {
 	case "*":
 		//--------------------------------------------------------------
 		// title of model
-		mdl.Title = stmt
+		mdl.Title = stmt.Stmt
 
 	case "NOTE":
 		//--------------------------------------------------------------
@@ -165,25 +181,25 @@ func (mdl *Model) AddStatement(stmt, mode string) (res *Result) {
 	case "L", "R", "C", "N", "A":
 		//--------------------------------------------------------------
 		// Level and rate equations
-		var eqn *Equation
-		if eqn, res = NewEquation(stmt, mode); !res.Ok {
+		var eqns []*Equation
+		if eqns, res = NewEquation(stmt); !res.Ok {
 			break
 		}
-		res = mdl.AddEquation(eqn)
+		Dbg.Msgf("+++ %v\n", eqns)
+		for _, eqn := range eqns {
+			if res = mdl.AddEquation(eqn); !res.Ok {
+				break
+			}
+		}
 
 	case "T":
 		//--------------------------------------------------------------
 		// Table definitions
-		if strings.Index(stmt, " ") != -1 {
-			if strict {
-				res = Failure(ErrParseInvalidSpace)
-				break
-			} else {
-				stmt = strings.Replace(stmt, " ", "", -1)
-			}
+		if res = prepLine(); !res.Ok {
+			break
 		}
 		var tbl *Table
-		tab := strings.Split(stmt, "=")
+		tab := strings.Split(line, "=")
 		vals := strings.Replace(tab[1], "/", ",", -1)
 		if tbl, res = NewTable(strings.Split(vals, ",")); !res.Ok {
 			break
@@ -193,16 +209,11 @@ func (mdl *Model) AddStatement(stmt, mode string) (res *Result) {
 	case "SPEC":
 		//--------------------------------------------------------------
 		// Runtime/simulation parameters
-		if strings.Index(stmt, " ") != -1 {
-			if strict {
-				res = Failure(ErrParseInvalidSpace)
-				break
-			} else {
-				stmt = strings.Replace(stmt, " ", "", -1)
-			}
+		if res = prepLine(); !res.Ok {
+			break
 		}
 		// model simulation specification
-		for _, def := range strings.Split(strings.Replace(stmt, "/", ",", -1), ",") {
+		for _, def := range strings.Split(strings.Replace(line, "/", ",", -1), ",") {
 			x := strings.Split(def, "=")
 			if len(x) != 2 {
 				res = Failure(ErrParseSyntax)
@@ -219,35 +230,25 @@ func (mdl *Model) AddStatement(stmt, mode string) (res *Result) {
 	case "PRINT":
 		//--------------------------------------------------------------
 		// Print-related parameters
-		if strings.Index(stmt, " ") != -1 {
-			if strict {
-				res = Failure(ErrParseInvalidSpace)
-				break
-			} else {
-				stmt = strings.Replace(stmt, " ", "", -1)
-			}
+		if res = prepLine(); !res.Ok {
+			break
 		}
 		// print specification
-		for i, level := range strings.Split(strings.Replace(stmt, "/", ",", -1), ",") {
+		for i, level := range strings.Split(strings.Replace(line, "/", ",", -1), ",") {
 			mdl.Print.AddVariable(level, i+1)
 		}
 
 	case "PLOT":
 		//--------------------------------------------------------------
 		// Plot-related parameters
-		if strings.Index(stmt, " ") != -1 {
-			if strict {
-				res = Failure(ErrParseInvalidSpace)
-				break
-			} else {
-				stmt = strings.Replace(stmt, " ", "", -1)
-			}
+		if res = prepLine(); !res.Ok {
+			break
 		}
 		// plot settings
-		if pos := strings.Index(stmt, "("); pos != -1 {
-			stmt = stmt[:pos]
+		if pos := strings.Index(line, "("); pos != -1 {
+			line = line[:pos]
 		}
-		for _, def := range strings.Split(strings.Replace(stmt, "/", ",", -1), ",") {
+		for _, def := range strings.Split(strings.Replace(line, "/", ",", -1), ",") {
 			x := strings.Split(def, "=")
 			if len(x) != 2 {
 				res = Failure(ErrParseSyntax)
@@ -256,8 +257,8 @@ func (mdl *Model) AddStatement(stmt, mode string) (res *Result) {
 			mdl.Plot.AddVariable(x[0], []rune(x[1])[0], -1, -1)
 		}
 	default:
-		Dbg.Msgf("Unknown mode '%s'\n", mode)
-		res = Failure(ErrParseInvalidMode+": %s", mode)
+		Dbg.Msgf("Unknown mode '%s'\n", stmt.Mode)
+		res = Failure(ErrParseInvalidMode+": %s", stmt.Mode)
 	}
 	return
 }
