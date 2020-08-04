@@ -31,6 +31,7 @@ const (
 	ErrModelEqnBadTargetStage = "Wrong stage for equation target"
 	ErrModelEqnOverwrite      = "Equation overwrite"
 	ErrModelEqnBadTargetKind  = "Wrong kind for equation target"
+	ErrModelUnknownEqn        = "No defining equation for variable found"
 	ErrModelUnknownFunction   = "Unknown function call"
 	ErrModelFunctionArg       = "Invalid function argument"
 	ErrModelNoVariable        = "No variable found"
