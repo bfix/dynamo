@@ -51,70 +51,77 @@ func (l *Line) String() string {
 
 // Parse a DYNAMO source file and return a model instance for it.
 func (mdl *Model) Parse(rdr io.Reader) (res *Result) {
-	// prepare the model equations at the end of parsing
-	defer func() {
-		if res.Ok {
-			// sort equations "topologically"
-			res = mdl.SortEquations()
-		}
-	}()
-
-	// parse source file
-	brdr := bufio.NewReader(rdr)
-	var (
-		stmt    *Line
-		stmtNo  int
-		mode    string
-		comment string
-	)
-	lineNo := 0
-	for {
-		// read next line and check length limit
-		data, _, err := brdr.ReadLine()
-		lineNo++
-		if strict && len(data) > MAX_LINE_LENGTH {
-			return Failure(ErrParseLineLength).SetLine(lineNo)
-		}
-		// handle read error
-		if err != nil {
-			if err == io.EOF {
-				// add last pending statement
-				return mdl.AddStatement(stmt).SetLine(stmtNo)
+	// process input stream
+	process := func() (res *Result) {
+		res = Success()
+		// parse source stream
+		brdr := bufio.NewReader(rdr)
+		var (
+			stmt    *Line
+			stmtNo  int
+			mode    string
+			comment string
+		)
+		lineNo := 0
+		for {
+			// read next line and check length limit
+			data, _, err := brdr.ReadLine()
+			lineNo++
+			if strict && len(data) > MAX_LINE_LENGTH {
+				res = Failure(ErrParseLineLength).SetLine(lineNo)
+				return
 			}
-			return Failure(err).SetLine(stmtNo)
-		}
-		// process line
-		line := strings.ToUpper(string(data))
-		if pos := strings.Index(line, " "); pos != -1 {
-			mode = line[:pos]
-			line = strings.TrimSpace(line[pos:])
-			if strings.Index("LRCNA", mode) != -1 {
-				if pos := strings.Index(line, " "); pos != -1 {
-					comment = strings.TrimSpace(line[pos:])
-					line = line[:pos]
+			// handle read error
+			if err != nil {
+				if err == io.EOF {
+					// add last pending statement
+					res = mdl.AddStatement(stmt).SetLine(stmtNo)
+				} else {
+					res = Failure(err).SetLine(lineNo)
 				}
+				return
 			}
-		} else {
-			mode = line
-			line = ""
-		}
-		// extension line (continuation)?
-		if mode == "X" {
-			stmt.Stmt += line
-			if len(comment) > 0 {
-				stmt.Comment += " " + comment
+			// process line
+			line := strings.ToUpper(string(data))
+			if pos := strings.Index(line, " "); pos != -1 {
+				mode = line[:pos]
+				line = strings.TrimSpace(line[pos:])
+				if strings.Index("LRCNA", mode) != -1 {
+					if pos := strings.Index(line, " "); pos != -1 {
+						comment = strings.TrimSpace(line[pos:])
+						line = line[:pos]
+					}
+				}
+			} else {
+				mode = line
+				line = ""
 			}
-			continue
+			// extension line (continuation)?
+			if mode == "X" {
+				stmt.Stmt += line
+				if len(comment) > 0 {
+					stmt.Comment += " " + comment
+				}
+				continue
+			}
+			// process pending statement
+			if res = mdl.AddStatement(stmt); !res.Ok {
+				res.SetLine(stmtNo)
+				break
+			}
+			stmt = new(Line)
+			stmt.Mode = mode
+			stmt.Stmt = line
+			stmt.Comment = comment
+			stmtNo = lineNo
 		}
-		// process pending statement
-		if res := mdl.AddStatement(stmt); !res.Ok {
-			return res.SetLine(stmtNo)
-		}
-		stmt = new(Line)
-		stmt.Mode = mode
-		stmt.Stmt = line
-		stmt.Comment = comment
-		stmtNo = lineNo
+		res.SetLine(lineNo)
+		return
 	}
-	return Success().SetLine(lineNo)
+	// perform parsing
+	if res = process(); res.Ok {
+		// sort equations "topologically" after parsing
+		res = mdl.SortEquations().SetLine(res.Line)
+	}
+	return
 }
