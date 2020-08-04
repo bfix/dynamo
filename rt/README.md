@@ -28,10 +28,10 @@ Richardson and Alexander L. Pugh III, The MIT Press, 1981 (ISBN
 
 ### flu.dynamo
 
-A simple epidemic model.
+A simple epidemic model (Page 96, Figure 3.7)
 
 ![flu.dynamo graph](./flu.svg)
 
 ### inventory.dynamo
 
-A simple inventory model.
+A simple inventory control model (Page 124, Figure 3.25)
