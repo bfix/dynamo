@@ -36,8 +36,35 @@ triggered environmental awareness globally.
 
 ## Caveats
 
-This is work-in-progress at a rather early stage. It is capable of running simple
-models (see the `rt/` folder for examples), but will most likely fail on anything
-more complex. If you have some old DYNAMO models and they don't work with the
-current version, please let me know (email to brf@hoi-polloi.org) and I am happy
-to work on the interpreter to make them run again.
+This is work-in-progress at a rather early stage. It is capable of running
+simple models (see the `rt/` folder for examples), but will most likely fail
+on anything more complex. If you have some old DYNAMO models and they don't
+work with the current version, please let me know (email to brf@hoi-polloi.org)
+and I am happy to work on the interpreter to make them run again.
+
+## Build the interpreter
+
+In the base directory of this repository issue the following command to build
+the DYNAMO interpreter:
+
+```bash
+GOPATH=$(pwd) go build -o dynamo src/cmd/dynamo/main.go
+```
+
+Make sure your Go installation is up-to-date (Go1.11+) and available.
+
+## Running a DYNAMO model
+
+Change into the `rt/` (runtime) folder; here you can find some sample DYNAMO
+models to play around with. For example you run the epidemic model with the
+following command:
+
+```bash
+../dynamo -p flu.prt flu.dynamo
+```
+
+This will run the `flu.dynamo` model and generate print output in the file
+`flu.prt` (the plotter output is not working yet).
+
+See the README in the `rt/` folder for more details on the example models
+provided.
