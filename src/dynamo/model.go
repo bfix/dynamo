@@ -208,7 +208,27 @@ func (mdl *Model) AddStatement(stmt *Line) (res *Result) {
 		if eqns, res = NewEquation(stmt); !res.Ok {
 			break
 		}
+	loop:
 		for _, eqn := range eqns {
+			// check if equation has correct temporality
+			if eqn.Target.Stage != NAME_STAGE_NEW && strings.Contains("LRA", eqn.Mode) {
+				res = Failure(ErrModelEqnBadTargetStage)
+				break
+			}
+			// check for matching equation mode and target kind
+			if (strings.Index("LAN", eqn.Mode) != -1 && eqn.Target.Kind != NAME_KIND_LEVEL) ||
+				(eqn.Mode == "R" && eqn.Target.Kind != NAME_KIND_RATE) ||
+				(eqn.Mode == "C" && eqn.Target.Kind != NAME_KIND_CONST) {
+				res = Failure(ErrModelEqnBadTargetKind)
+				break
+			}
+			// check if equation is not defined yet.
+			for _, e := range mdl.Eqns {
+				if e.Target.Compare(eqn.Target) == NAME_MATCH {
+					res = Failure(ErrModelEqnOverwrite)
+					break loop
+				}
+			}
 			// unsorted append to list of equations
 			mdl.Eqns = append(mdl.Eqns, eqn)
 		}
@@ -330,7 +350,7 @@ func (mdl *Model) SortEquations() (res *Result) {
 	loop:
 		for _, d := range eqn.Dependencies {
 			// skip system variables
-			if d.Name == "TIME" {
+			if strings.Index("TIME,DT,", d.Name+",") != -1 {
 				continue
 			}
 			// skip table names
