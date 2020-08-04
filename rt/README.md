@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 SPDX-License-Identifier: AGPL3.0-or-later
 
-## Model provided
+## Example models
 
 The example models in this folder are taken from the book
 **Introduction to System Dynamics Modeling with DYNAMO** by George P.
@@ -28,6 +28,10 @@ Richardson and Alexander L. Pugh III, The MIT Press, 1981 (ISBN
 
 ### flu.dynamo
 
-A simple epidemic model in DYNAMO.
+A simple epidemic model.
 
-![flu.dynamo graph](./flu.svg)<img src="./flu.svg">
+![flu.dynamo graph](./flu.svg)
+
+### inventory.dynamo
+
+A simple inventory model.
