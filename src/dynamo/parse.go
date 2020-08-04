@@ -22,6 +22,7 @@ package dynamo
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"strings"
 )
@@ -41,6 +42,11 @@ type Line struct {
 	Mode    string
 	Stmt    string
 	Comment string
+}
+
+// String returns a human-readable representatun of a line
+func (l *Line) String() string {
+	return fmt.Sprintf("[%s] %s {%s}", l.Mode, l.Stmt, l.Comment)
 }
 
 // Parse a DYNAMO source file and return a model instance for it.
