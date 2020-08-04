@@ -47,7 +47,7 @@ const (
 type State map[string]Variable
 
 //----------------------------------------------------------------------
-// TABLE to model functions of form "Y = TABLE(X)"
+// TABLE to model functions of form "Y = TABLE(X)" (or TABXT or TABPL)
 //----------------------------------------------------------------------
 
 // Table is a list of values
@@ -148,13 +148,18 @@ func (mdl *Model) Dump() {
 	for _, e := range mdl.Eqns {
 		incr(e.Mode)
 	}
-	Msgf(">     Number of equations: %4d\n", len(mdl.Eqns))
-	Msgf(">         LEVEL equations: %4d\n", cnt["L"])
-	Msgf(">          RATE equations: %4d\n", cnt["R"])
-	Msgf(">           AUX equations: %4d\n", cnt["A"])
-	Msgf(">         CONST equations: %4d\n", cnt["C"])
-	Msgf(">          INIT equations: %4d\n", cnt["N"])
-	Msgf(">   Number of TABLE def's: %4d\n", len(mdl.Tables))
+	Msgf(">   Number of equations: %4d\n", len(mdl.Eqns))
+	Msgf(">       LEVEL equations: %4d\n", cnt["L"])
+	Msgf(">        RATE equations: %4d\n", cnt["R"])
+	Msgf(">         AUX equations: %4d\n", cnt["A"])
+	Msgf(">       CONST equations: %4d\n", cnt["C"])
+	Msgf(">        INIT equations: %4d\n", cnt["N"])
+	Msg("-----------------------------------")
+	for i, e := range mdl.Eqns {
+		Msgf("> %5d: %s\n", i+1, e.String())
+	}
+	Msg("-----------------------------------")
+	Msgf("> Number of TABLE def's: %4d\n", len(mdl.Tables))
 }
 
 // AddStatement inserts a new source statement to the model.
@@ -202,7 +207,6 @@ func (mdl *Model) AddStatement(stmt *Line) (res *Result) {
 		if eqns, res = NewEquation(stmt); !res.Ok {
 			break
 		}
-		Dbg.Msgf("+++ %v\n", eqns)
 		for _, eqn := range eqns {
 			if res = mdl.AddEquation(eqn); !res.Ok {
 				break
@@ -290,7 +294,7 @@ func (mdl *Model) AddStatement(stmt *Line) (res *Result) {
 // * Insert fails if another equation for the same target variable already exists.
 func (mdl *Model) AddEquation(eqn *Equation) (res *Result) {
 	res = Success()
-	Dbg.Msgf("!!! Inserting '%s'\n", eqn.String())
+	Dbg.Msgf("AddEquation: '%s'\n", eqn.String())
 
 	// check equation target stage
 	if eqn.Target.Stage == NAME_STAGE_OLD {
@@ -305,26 +309,32 @@ func (mdl *Model) AddEquation(eqn *Equation) (res *Result) {
 		res = Failure(ErrModelEqnBadTargetKind)
 		return
 	}
-	// we can savely append rate equations as they are forward in time (and therefore computed last)
-	if eqn.Mode == "R" {
-		mdl.Eqns = append(mdl.Eqns, eqn)
-		return
-	}
+
 	// find insertion point
 	num := len(mdl.Eqns)
 	posBefore, posAfter := num, -1
+	if eqn.Mode == "R" {
+		posAfter = num - 1
+	}
+	rateSeen := false
 	for i, e := range mdl.Eqns {
-		// we are done at the first rate equation
+		// detect first rate equation
 		if e.Mode == "R" {
-			break
+			if eqn.Mode != "R" {
+				break
+			}
+			if !rateSeen {
+				rateSeen = true
+				posAfter = i
+			}
 		}
 		// check for same target
 		if e.Target.Compare(eqn.Target) == NAME_MATCH {
 			res = Failure(ErrModelEqnOverwrite)
 			return
 		}
-		// update "posBefore" if eqn target is used (in same stage)
-		if e.DependsOn(eqn.Target) && i < posBefore {
+		// update "posBefore" if eqn is not a rate and target is used
+		if eqn.Mode != "R" && e.DependsOn(eqn.Target) && i < posBefore {
 			posBefore = i
 		}
 		// update "posAfter" if eqn uses existing target (in same stage)
@@ -332,17 +342,23 @@ func (mdl *Model) AddEquation(eqn *Equation) (res *Result) {
 			posAfter = i
 		}
 	}
-	Dbg.Msgf("***%d:%d\n", posBefore, posAfter)
+	Dbg.Msgf(">> Insert after %d and before %d\n", posAfter, posBefore)
 	if posBefore < posAfter {
 		res = Failure(ErrModelDependencyLoop)
 		return
 	}
+	// insert equation into list
+	insPos := posBefore - 1 // posAfter + 1
+	if insPos < 0 {
+		insPos = 0
+	}
 	newEqns := make([]*Equation, num+1)
-	copy(newEqns, mdl.Eqns[:posAfter+1])
-	newEqns[posAfter+1] = eqn
-	copy(newEqns[posAfter+2:], mdl.Eqns[posAfter+1:])
+	copy(newEqns, mdl.Eqns[:insPos])
+	newEqns[insPos] = eqn
+	copy(newEqns[insPos+1:], mdl.Eqns[insPos:])
 	mdl.Eqns = newEqns
 
+	// debug current equation list
 	for i, e := range mdl.Eqns {
 		Dbg.Msgf("[%d] %s | %s=%v\n", i, e, e.Target, e.Dependencies)
 	}
