@@ -48,10 +48,45 @@ type Equation struct {
 // NewEquation converts a statement into one or more equation instances
 func NewEquation(stmt *Line) (eqns []*Equation, res *Result) {
 	res = Success()
+	Dbg.Msgf("NewEquation(%s)\n", stmt.String())
 
 	// check for spaces in equation
 	if strings.Index(stmt.Stmt, " ") != -1 {
 		res = Failure(ErrParseInvalidSpace)
+		return
+	}
+	// Const statements can have multiple assignments in one line.
+	if stmt.Mode == "C" && strings.Count(stmt.Stmt, "=") > 1 {
+		// add new extracted equation
+		addEqn := func(line string) (res *Result) {
+			var list []*Equation
+			if list, res = NewEquation(&Line{
+				Stmt: line,
+				Mode: "C",
+			}); res.Ok {
+				for _, e := range list {
+					eqns = append(eqns, e)
+				}
+			}
+			return
+		}
+		// parse from end of statement
+		line := stmt.Stmt
+		for {
+			pos := strings.LastIndex(line, "=")
+			delim := strings.LastIndex(line[:pos], ",")
+			if delim == -1 {
+				if delim = strings.LastIndex(line[:pos], "/"); delim == -1 {
+					res = addEqn(line)
+					break
+				}
+			}
+			Dbg.Msgf("Delim: %d\n", delim)
+			if res = addEqn(line[delim+1:]); !res.Ok {
+				break
+			}
+			line = line[:delim]
+		}
 		return
 	}
 	// expand multiplication shortcut
