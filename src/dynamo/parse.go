@@ -50,7 +50,14 @@ func (l *Line) String() string {
 }
 
 // Parse a DYNAMO source file and return a model instance for it.
-func (mdl *Model) Parse(rdr io.Reader) *Result {
+func (mdl *Model) Parse(rdr io.Reader) (res *Result) {
+	// prepare the model equations at the end of parsing
+	defer func() {
+		if res.Ok {
+			// sort equations "topologically"
+			res = mdl.SortEquations()
+		}
+	}()
 
 	// parse source file
 	brdr := bufio.NewReader(rdr)
