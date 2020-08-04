@@ -21,6 +21,7 @@ package dynamo
 //----------------------------------------------------------------------
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -208,9 +209,8 @@ func (mdl *Model) AddStatement(stmt *Line) (res *Result) {
 			break
 		}
 		for _, eqn := range eqns {
-			if res = mdl.AddEquation(eqn); !res.Ok {
-				break
-			}
+			// unsorted append to list of equations
+			mdl.Eqns = append(mdl.Eqns, eqn)
 		}
 
 	case "T":
@@ -284,86 +284,119 @@ func (mdl *Model) AddStatement(stmt *Line) (res *Result) {
 	return
 }
 
-// AddEquation inserts a new equation into the list at the best position:
-// * Check if stage of target variable is "NEW" (failure if "OLD")
-// * Rate equations are inserted at the end (appended)
-// * Compute "posBefore" and "posAfter":
-//    "posBefore": Position of first equation using this target
-//    "posAfter": Position of last target being used in this equation
-// * Report cycle error if posBefore < posAfter
-// * Insert fails if another equation for the same target variable already exists.
-func (mdl *Model) AddEquation(eqn *Equation) (res *Result) {
+//----------------------------------------------------------------------
+// Sorting DYNAMO equations based on dependencies (topological sort)
+//----------------------------------------------------------------------
+
+// An entry represents an equation in the list (at given position 'pos')
+// and a list of dependencies. A dependency referes to anther equation
+// that is referenced in this equation (on the right side).
+type entry struct {
+	pos  int
+	deps map[int]bool
+}
+
+// String returns a human-readable representation of an entry
+func (e *entry) String() string {
+	deps := ""
+	for i := range e.deps {
+		if len(deps) > 0 {
+			deps += ","
+		}
+		deps += strconv.Itoa(i)
+	}
+	if len(deps) > 0 {
+		return fmt.Sprintf("%d/%s", e.pos, deps)
+	}
+	return strconv.Itoa(e.pos)
+}
+
+// SortEquations sorts an  equation list "topologically" based on dependencies.
+// Kahn's algorithm (1962) is used for sorting.
+func (mdl *Model) SortEquations() (res *Result) {
 	res = Success()
-	Dbg.Msgf("AddEquation: '%s'\n", eqn.String())
 
-	// check equation target stage
-	if eqn.Target.Stage == NAME_STAGE_OLD {
-		res = Failure(ErrModelEqnBadTargetStage)
-		return
+	// pass 1: build set of entries from equations
+	index := make(map[string]*entry)
+	for i, eqn := range mdl.Eqns {
+		index[eqn.Target.Name] = &entry{
+			pos:  i,
+			deps: make(map[int]bool),
+		}
 	}
-	// check for matching equation mode and target kind
-	if (strings.Index("LAN", eqn.Mode) != -1 && eqn.Target.Kind != NAME_KIND_LEVEL) ||
-		(eqn.Mode == "R" && eqn.Target.Kind != NAME_KIND_RATE) ||
-		(eqn.Mode == "C" && eqn.Target.Kind != NAME_KIND_CONST) {
-		Dbg.Msgf("Mode='%s', Kind=%d\n", eqn.Mode, eqn.Target.Kind)
-		res = Failure(ErrModelEqnBadTargetKind)
-		return
+	// pass 2: build dependencies
+	for _, e := range index {
+		eqn := mdl.Eqns[e.pos]
+	loop:
+		for _, d := range eqn.Dependencies {
+			// skip system variables
+			if d.Name == "TIME" {
+				continue
+			}
+			// skip table names
+			for tbl, _ := range mdl.Tables {
+				if d.Name == tbl {
+					continue loop
+				}
+			}
+			// get defining equation for dependency
+			x, ok := index[d.Name]
+			if !ok {
+				res = Failure(ErrModelUnknownEqn+": %s", d.Name)
+				return
+			}
+			e.deps[x.pos] = true
+		}
 	}
 
-	// find insertion point
-	num := len(mdl.Eqns)
-	posBefore, posAfter := num, -1
-	if eqn.Mode == "R" {
-		posAfter = num - 1
-	}
-	rateSeen := false
-	for i, e := range mdl.Eqns {
-		// detect first rate equation
-		if e.Mode == "R" {
-			if eqn.Mode != "R" {
-				break
-			}
-			if !rateSeen {
-				rateSeen = true
-				posAfter = i
-			}
-		}
-		// check for same target
-		if e.Target.Compare(eqn.Target) == NAME_MATCH {
-			res = Failure(ErrModelEqnOverwrite)
-			return
-		}
-		// update "posBefore" if eqn is not a rate and target is used
-		if eqn.Mode != "R" && e.DependsOn(eqn.Target) && i < posBefore {
-			posBefore = i
-		}
-		// update "posAfter" if eqn uses existing target (in same stage)
-		if eqn.DependsOn(e.Target) {
-			posAfter = i
+	// L ← Empty list that will contain the sorted elements
+	// S ← Set of all nodes with no incoming edge
+	var L, S, G []*entry
+	for _, e := range index {
+		if len(e.deps) == 0 {
+			S = append(S, e)
+		} else {
+			G = append(G, e)
 		}
 	}
-	Dbg.Msgf(">> Insert after %d and before %d\n", posAfter, posBefore)
-	if posBefore < posAfter {
+	for len(S) > 0 {
+		n := S[0]
+		S = S[1:]
+		L = append(L, n)
+		var Gnew []*entry
+		for _, m := range G {
+			if _, ok := m.deps[n.pos]; ok {
+				delete(m.deps, n.pos)
+			}
+			if len(m.deps) == 0 {
+				S = append(S, m)
+			} else {
+				Gnew = append(Gnew, m)
+			}
+		}
+		G = Gnew
+	}
+	if len(G) > 0 {
+		Msg("Cyclic dependencies detected:")
+		for _, e := range G {
+			eqn := mdl.Eqns[e.pos]
+			Msg(">> " + eqn.String())
+		}
 		res = Failure(ErrModelDependencyLoop)
-		return
-	}
-	// insert equation into list
-	insPos := posBefore - 1 // posAfter + 1
-	if insPos < 0 {
-		insPos = 0
-	}
-	newEqns := make([]*Equation, num+1)
-	copy(newEqns, mdl.Eqns[:insPos])
-	newEqns[insPos] = eqn
-	copy(newEqns[insPos+1:], mdl.Eqns[insPos:])
-	mdl.Eqns = newEqns
-
-	// debug current equation list
-	for i, e := range mdl.Eqns {
-		Dbg.Msgf("[%d] %s | %s=%v\n", i, e, e.Target, e.Dependencies)
+	} else {
+		// build re-ordered equation list
+		eqns := make([]*Equation, 0)
+		for _, e := range L {
+			eqns = append(eqns, mdl.Eqns[e.pos])
+		}
+		mdl.Eqns = eqns
 	}
 	return
 }
+
+//----------------------------------------------------------------------
+// Getter/Setter methods for DYNAMO variables (levels, rates, constants)
+//----------------------------------------------------------------------
 
 // Get returns the value of the named variable. The variable can either be
 // a constant, a system parameter (like DT or a system/printer/plotter setting)
@@ -433,7 +466,6 @@ func (mdl *Model) Run() (res *Result) {
 		}
 		return
 	}
-
 	// Initialize constants
 	Msg("   Initializing constants:")
 	if res = compute("C"); !res.Ok {
