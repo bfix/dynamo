@@ -59,8 +59,10 @@ var testSet = []*testData{
 		src: []string{
 			"L INV.K=INV.J+DT*CHNG.JK+TEST.K",
 			"L TEST.K=CONST*INV.K",
+			"R CHNG.KL=0",
+			"C CONST=1",
 		},
-		lineno: 2,
+		lineno: 4,
 		err:    ErrModelDependencyLoop,
 	},
 	//------------------------------------------------------------------
@@ -69,8 +71,9 @@ var testSet = []*testData{
 		name: "eqn: missing mode",
 		src: []string{
 			"INV.K=INV.J+DT*CHNG.JK",
+			"R CHNG.KL=0",
 		},
-		lineno: 1,
+		lineno: 2,
 		err:    ErrParseInvalidMode,
 	},
 	//------------------------------------------------------------------
@@ -79,8 +82,9 @@ var testSet = []*testData{
 		name: "eqn: bad mode",
 		src: []string{
 			"Y INV.K=INV.J+DT*CHNG.JK",
+			"R CHNG.KL=0",
 		},
-		lineno: 1,
+		lineno: 2,
 		err:    ErrParseInvalidMode,
 	},
 	//------------------------------------------------------------------
@@ -89,8 +93,9 @@ var testSet = []*testData{
 		name: "eqn: syntax",
 		src: []string{
 			"L INV.K=INV.J+DT**CHNG.JK",
+			"R CHNG.KL=0",
 		},
-		lineno: 1,
+		lineno: 2,
 		err:    ErrParseSyntax,
 	},
 	//------------------------------------------------------------------
