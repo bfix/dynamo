@@ -66,5 +66,11 @@ following command:
 This will run the `flu.dynamo` model and generate print output in the file
 `flu.prt` (the plotter output is not working yet).
 
+The following options are available:
+
+* `-d <debug-file>`: write debug output to specified file. Use `-` to log to console.
+* `-p <print-file>`: write printer output to file
+* `-g <plot-file>`: write plot output to file (plot output not implemented yet)
+
 See the README in the `rt/` folder for more details on the example models
 provided.
