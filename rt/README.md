@@ -1,6 +1,6 @@
 
-Sample models specified in the DYNAMO programming language
-==========================================================
+Example models specified in the DYNAMO programming language
+===========================================================
 
 (c) 2020 Bernd Fix <brf@hoi-polloi.org>   >Y<
 
@@ -35,3 +35,12 @@ A simple epidemic model (Page 96, Figure 3.7)
 ### inventory.dynamo
 
 A simple inventory control model (Page 124, Figure 3.25)
+
+This is a base model to show the effects of different test functions (STEP,
+RAMP, NOISE,...) in a model run.
+
+### inv-1.dynamo
+
+Run with `TEST=1` (Page 125, Figure 3.26)
+
+![inv-1.dynamo graph](./inv-1.svg)
