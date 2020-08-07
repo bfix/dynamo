@@ -66,7 +66,7 @@ func main() {
 
 	dynamo.Msgf("Running system model...")
 	if res := mdl.Run(); !res.Ok {
-		dynamo.Fatal(res.Err.Error())
+		dynamo.Msgf("FAILED: %s\n", res.Err.Error())
 	}
 	mdl.Quit()
 	dynamo.Msgf("   Run completed.")
