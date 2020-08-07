@@ -216,7 +216,8 @@ func (mdl *Model) AddStatement(stmt *Line) (res *Result) {
 				break
 			}
 			// check for matching equation mode and target kind
-			if (strings.Index("LAN", eqn.Mode) != -1 && eqn.Target.Kind != NAME_KIND_LEVEL) ||
+			if (strings.Index("LA", eqn.Mode) != -1 && eqn.Target.Kind != NAME_KIND_LEVEL) ||
+				(eqn.Mode == "N" && eqn.Target.Kind != NAME_KIND_INIT) ||
 				(eqn.Mode == "R" && eqn.Target.Kind != NAME_KIND_RATE) ||
 				(eqn.Mode == "C" && eqn.Target.Kind != NAME_KIND_CONST) {
 				res = Failure(ErrModelEqnBadTargetKind)
@@ -230,6 +231,7 @@ func (mdl *Model) AddStatement(stmt *Line) (res *Result) {
 				}
 			}
 			// unsorted append to list of equations
+			Dbg.Msgf("AddEquation: %s\n", eqn.String())
 			mdl.Eqns = append(mdl.Eqns, eqn)
 		}
 
@@ -254,6 +256,7 @@ func (mdl *Model) AddStatement(stmt *Line) (res *Result) {
 			break
 		}
 		// model simulation specification
+		Msg("    Runtime specification:")
 		for _, def := range strings.Split(strings.Replace(line, "/", ",", -1), ",") {
 			x := strings.Split(def, "=")
 			if len(x) != 2 {
@@ -266,6 +269,7 @@ func (mdl *Model) AddStatement(stmt *Line) (res *Result) {
 				break
 			}
 			mdl.Consts[x[0]] = Variable(val)
+			Msgf("        %s = %f\n", x[0], val)
 		}
 
 	case "PRINT":
@@ -308,16 +312,17 @@ func (mdl *Model) AddStatement(stmt *Line) (res *Result) {
 // Sorting DYNAMO equations based on dependencies (topological sort)
 //----------------------------------------------------------------------
 
-// An entry represents an equation in the list (at given position 'pos')
-// and a list of dependencies. A dependency referes to anther equation
-// that is referenced in this equation (on the right side).
-type entry struct {
+// An eqnEntry represents an equation in the list 'mdl.Eqns' at given position
+// 'pos'. It keeps a list of dependencies; a dependency referes to anther
+// equation that is referenced in this equation (on the right side).
+type eqnEntry struct {
 	pos  int
+	name string
 	deps map[int]bool
 }
 
 // String returns a human-readable representation of an entry
-func (e *entry) String() string {
+func (e *eqnEntry) String() string {
 	deps := ""
 	for i := range e.deps {
 		if len(deps) > 0 {
@@ -326,90 +331,148 @@ func (e *entry) String() string {
 		deps += strconv.Itoa(i)
 	}
 	if len(deps) > 0 {
-		return fmt.Sprintf("%d/%s", e.pos, deps)
+		return fmt.Sprintf("{%d:%s|%s}", e.pos, e.name, deps)
 	}
-	return strconv.Itoa(e.pos)
+	return fmt.Sprintf("{%d:%s}", e.pos, e.name)
 }
 
-// SortEquations sorts an  equation list "topologically" based on dependencies.
-// Kahn's algorithm (1962) is used for sorting.
+// create new entry for equation position
+func newEntry(i int, name string) *eqnEntry {
+	return &eqnEntry{
+		pos:  i,
+		name: name,
+		deps: make(map[int]bool),
+	}
+}
+
+// SortEquations sorts an equation list "topologically" based on dependencies.
 func (mdl *Model) SortEquations() (res *Result) {
 	res = Success()
 
-	// pass 1: build set of entries from equations
-	index := make(map[string]*entry)
-	for i, eqn := range mdl.Eqns {
-		index[eqn.Target.Name] = &entry{
-			pos:  i,
-			deps: make(map[int]bool),
-		}
-	}
-	// pass 2: build dependencies
-	for _, e := range index {
-		eqn := mdl.Eqns[e.pos]
-	loop:
-		for _, d := range eqn.Dependencies {
-			// skip system variables
-			if strings.Index("TIME,DT,", d.Name+",") != -1 {
-				continue
-			}
-			// skip table names
-			for tbl, _ := range mdl.Tables {
-				if d.Name == tbl {
-					continue loop
+	// Kahn's algorithm (1962) is used for sorting.
+	eqnSort := func(list, ref map[string]*eqnEntry) (out []int, res *Result) {
+		res = Success()
+		for _, entry := range list {
+			eqn := mdl.Eqns[entry.pos]
+		loop:
+			for _, d := range eqn.Dependencies {
+				// skip system variables
+				if strings.Index("TIME,DT,", d.Name+",") != -1 {
+					continue
+				}
+				// skip table names
+				for tbl, _ := range mdl.Tables {
+					if d.Name == tbl {
+						continue loop
+					}
+				}
+				// get defining equation for dependency
+				x, ok := list[d.Name]
+				if ok {
+					if x.pos != entry.pos {
+						entry.deps[x.pos] = true
+					}
+					continue
+				}
+				if ref != nil {
+					_, ok = ref[d.Name]
+				}
+				if !ok {
+					Dbg.Msgf("Failed in %s:\n", eqn.String())
+					res = Failure(ErrModelUnknownEqn+": %s", d.Name)
+					break
 				}
 			}
-			// get defining equation for dependency
-			x, ok := index[d.Name]
-			if !ok {
-				res = Failure(ErrModelUnknownEqn+": %s", d.Name)
-				return
-			}
-			e.deps[x.pos] = true
 		}
+		Dbg.Msgf(">> %v\n", list)
+		var (
+			L     []*eqnEntry // empty list that will contain the sorted elements
+			S     []*eqnEntry // set of all nodes with no incoming edge
+			graph []*eqnEntry // list of pending nodes in graph
+		)
+		for _, entry := range list {
+			if len(entry.deps) == 0 {
+				S = append(S, entry)
+			} else {
+				graph = append(graph, entry)
+			}
+		}
+		for len(S) > 0 {
+			n := S[0]
+			S = S[1:]
+			L = append(L, n)
+			var newGraph []*eqnEntry
+			for _, m := range graph {
+				if _, ok := m.deps[n.pos]; ok {
+					delete(m.deps, n.pos)
+				}
+				if len(m.deps) == 0 {
+					S = append(S, m)
+				} else {
+					newGraph = append(newGraph, m)
+				}
+			}
+			graph = newGraph
+		}
+		if len(graph) > 0 {
+			Msg("Cyclic dependencies detected:")
+			for _, e := range graph {
+				eqn := mdl.Eqns[e.pos]
+				Msg(">> " + eqn.String())
+			}
+			res = Failure(ErrModelDependencyLoop)
+		} else {
+			// build re-ordered equation list
+			for _, entry := range L {
+				out = append(out, entry.pos)
+			}
+		}
+		return
 	}
 
-	// L ← Empty list that will contain the sorted elements
-	// S ← Set of all nodes with no incoming edge
-	var L, S, G []*entry
-	for _, e := range index {
-		if len(e.deps) == 0 {
-			S = append(S, e)
+	// we build two separate equation lists: one for non-levels ("C", "N", "A"
+	// and "R") and one for levels ("L").
+	res = Success()
+	Dbg.Msgf("SortEquations: Sorting %d equations...\n", len(mdl.Eqns))
+	eqnInit := make(map[string]*eqnEntry)
+	eqnRun := make(map[string]*eqnEntry)
+	for i, eqn := range mdl.Eqns {
+		name := eqn.Target.Name
+		Dbg.Msgf("SortEquations << [%d] %s\n", i, eqn.String())
+		if strings.Index("CNRA", eqn.Mode) != -1 {
+			if _, ok := eqnInit[name]; ok {
+				return Failure(ErrModelVariabeExists+": %s", name)
+			}
+			eqnInit[name] = newEntry(i, name)
+		} else if strings.Index("L", eqn.Mode) != -1 {
+			if _, ok := eqnRun[name]; ok {
+				return Failure(ErrModelVariabeExists+": %s", name)
+			}
+			eqnRun[name] = newEntry(i, name)
 		} else {
-			G = append(G, e)
+			return Failure(ErrModelEqnBadMode)
 		}
 	}
-	for len(S) > 0 {
-		n := S[0]
-		S = S[1:]
-		L = append(L, n)
-		var Gnew []*entry
-		for _, m := range G {
-			if _, ok := m.deps[n.pos]; ok {
-				delete(m.deps, n.pos)
+	// sort both lists
+	var listInit, listRun []int
+	Dbg.Msg("Sorting eqnInit...")
+	if listInit, res = eqnSort(eqnInit, nil); res.Ok {
+		Dbg.Msg("Sorting eqnRun...")
+		if listRun, res = eqnSort(eqnRun, eqnInit); res.Ok {
+			// build re-ordered equation list
+			var eqns []*Equation
+			for _, i := range listInit {
+				eqns = append(eqns, mdl.Eqns[i])
 			}
-			if len(m.deps) == 0 {
-				S = append(S, m)
-			} else {
-				Gnew = append(Gnew, m)
+			for _, i := range listRun {
+				eqns = append(eqns, mdl.Eqns[i])
+			}
+			mdl.Eqns = eqns
+			Dbg.Msgf("SortEquations: Finishing %d equations...\n", len(mdl.Eqns))
+			for i, eqn := range mdl.Eqns {
+				Dbg.Msgf("SortEquations >> [%d] %s\n", i, eqn.String())
 			}
 		}
-		G = Gnew
-	}
-	if len(G) > 0 {
-		Msg("Cyclic dependencies detected:")
-		for _, e := range G {
-			eqn := mdl.Eqns[e.pos]
-			Msg(">> " + eqn.String())
-		}
-		res = Failure(ErrModelDependencyLoop)
-	} else {
-		// build re-ordered equation list
-		eqns := make([]*Equation, 0)
-		for _, e := range L {
-			eqns = append(eqns, mdl.Eqns[e.pos])
-		}
-		mdl.Eqns = eqns
 	}
 	return
 }
@@ -458,10 +521,10 @@ func (mdl *Model) Set(name *Name, val Variable) (res *Result) {
 	switch name.Kind {
 	case NAME_KIND_CONST:
 		mdl.Consts[name.Name] = val
-	case NAME_KIND_LEVEL, NAME_KIND_RATE:
+	case NAME_KIND_LEVEL, NAME_KIND_RATE, NAME_KIND_INIT:
 		mdl.Current[name.Name] = val
 	}
-	Msgf(">    %s = %f\n", name, val)
+	Dbg.Msgf(">    %s = %f\n", name, val)
 	return
 }
 
@@ -486,21 +549,17 @@ func (mdl *Model) Run() (res *Result) {
 		}
 		return
 	}
-	// Initialize constants
-	Msg("   Initializing constants:")
-	if res = compute("C"); !res.Ok {
-		return
-	}
-	// Intialize levels
-	Msg("   Initializing levels:")
-	if res = compute("N"); !res.Ok {
+	// Initialize state:
+	Msg("   Initializing state:")
+	mdl.Current["TIME"] = 0
+	if res = compute("CNRA"); !res.Ok {
 		return
 	}
 	// keep a list of a variables (level,rate)
 	varList := make([]string, 0)
 
 	// Check if all levels have level equations
-	Msg("   Checking levels:")
+	Msg("   Checking state:")
 	check := make(map[string]bool)
 	ok := true
 	for level, _ := range mdl.Current {
@@ -508,7 +567,8 @@ func (mdl *Model) Run() (res *Result) {
 		varList = append(varList, level)
 	}
 	for _, eqn := range mdl.Eqns {
-		if eqn.Mode != "L" {
+		if strings.Index("CR", eqn.Mode) != -1 {
+			check[eqn.Target.Name] = true
 			continue
 		}
 		level := eqn.Target.Name
@@ -547,18 +607,13 @@ func (mdl *Model) Run() (res *Result) {
 	time, ok := mdl.Current["TIME"]
 	if !ok {
 		time = 0.0
+		mdl.Current["TIME"] = time
 	}
-	mdl.Current["TIME"] = time
 	for epoch, t := 1, time; t <= length; epoch, t = epoch+1, t+dt {
 		// compute auxiliaries
 		Msgf("      Epoch %d:\n", epoch)
-		Msg("         Evaluating AUX equations:")
-		if res = compute("A"); !res.Ok {
-			break
-		}
-		// compute rates
-		Msg("         Evaluating RATE equations:")
-		if res = compute("R"); !res.Ok {
+		Msg("         Evaluating AUX + RATE equations:")
+		if res = compute("AR"); !res.Ok {
 			break
 		}
 		// emit current values for plot and print
@@ -568,19 +623,20 @@ func (mdl *Model) Run() (res *Result) {
 		if res = mdl.Plot.Add(); !res.Ok {
 			break
 		}
-		// Propagate in time
+		// propagate state
 		mdl.Last = mdl.Current
 		mdl.Current = make(State)
 		for level, val := range mdl.Last {
 			mdl.Current[level] = val
 		}
-		mdl.Current["TIME"] = mdl.Current["TIME"] + mdl.Consts["DT"]
 		// compute new levels
 		Msg("         Evaluating LEVEL equations:")
 		if res = compute("L"); !res.Ok {
 			break
 		}
 		Dbg.Msgf("[%d] %v\n", epoch, mdl.Current)
+		// propagate in time
+		mdl.Current["TIME"] = mdl.Current["TIME"] + mdl.Consts["DT"]
 	}
 	return
 }
