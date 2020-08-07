@@ -29,15 +29,18 @@ import (
 const (
 	ErrModelDependencyLoop    = "Equations have cyclic dependencies"
 	ErrModelEqnBadTargetStage = "Wrong stage for equation target"
+	ErrModelEqnBadMode        = "Wrong mode for equation"
 	ErrModelEqnOverwrite      = "Equation overwrite"
 	ErrModelEqnBadTargetKind  = "Wrong kind for equation target"
 	ErrModelUnknownEqn        = "No defining equation for variable found"
 	ErrModelUnknownFunction   = "Unknown function call"
 	ErrModelFunctionArg       = "Invalid function argument"
 	ErrModelNoVariable        = "No variable found"
+	ErrModelVariabeExists     = "Variable already known"
 	ErrModelNoSuchTable       = "No such table"
 	ErrModelWrongTableSize    = "Tabe size mismatch"
 	ErrModelNoTime            = "No TIME defined"
+	ErrModelMaxRetry          = "Retry limit reached"
 
 	ErrParseLineLength      = "Line too long"
 	ErrParseInvalidSpace    = "Space in equation"
