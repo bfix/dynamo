@@ -126,7 +126,7 @@ func init() {
 				var a, b float64
 				if a, res = resolve(args[0], mdl); res.Ok {
 					if b, res = resolve(args[1], mdl); res.Ok {
-						if a < b {
+						if compare(a, b) < 0 {
 							val = Variable(b)
 						} else {
 							val = Variable(a)
@@ -143,7 +143,7 @@ func init() {
 				var a, b float64
 				if a, res = resolve(args[0], mdl); res.Ok {
 					if b, res = resolve(args[1], mdl); res.Ok {
-						if a < b {
+						if compare(a, b) < 0 {
 							val = Variable(a)
 						} else {
 							val = Variable(b)
@@ -162,7 +162,7 @@ func init() {
 					if b, res = resolve(args[1], mdl); res.Ok {
 						if x, res = resolve(args[2], mdl); res.Ok {
 							if y, res = resolve(args[3], mdl); res.Ok {
-								if x < y {
+								if compare(x, y) < 0 {
 									val = Variable(b)
 								} else {
 									val = Variable(a)
@@ -182,7 +182,7 @@ func init() {
 				if a, res = resolve(args[0], mdl); res.Ok {
 					if b, res = resolve(args[1], mdl); res.Ok {
 						if x, res = resolve(args[2], mdl); res.Ok {
-							if math.Abs(x) < 1e-9 {
+							if compare(x, 0) == 0 {
 								val = Variable(a)
 							} else {
 								val = Variable(b)
@@ -204,7 +204,7 @@ func init() {
 				if a, res = resolve(args[0], mdl); res.Ok {
 					if b, res = resolve(args[1], mdl); res.Ok {
 						if time, ok := mdl.Current["TIME"]; ok {
-							if float64(time) > b {
+							if compare(float64(time), b) >= 0 {
 								val = Variable(a)
 							}
 						} else {
@@ -224,7 +224,7 @@ func init() {
 					if b, res = resolve(args[1], mdl); res.Ok {
 						if time, ok := mdl.Current["TIME"]; ok {
 							t := float64(time)
-							if t > b {
+							if compare(t, b) >= 0 {
 								val = Variable(a * (t - b))
 							} else {
 								val = 0
@@ -248,7 +248,7 @@ func init() {
 							if time, ok := mdl.Current["TIME"]; ok {
 								t := float64(time)
 								x := (t - b) / c
-								if math.Abs(x-math.Floor(x)) < 1e-9 {
+								if compare(x, math.Floor(x)) == 0 {
 									val = Variable(a)
 								}
 							}
@@ -315,7 +315,7 @@ func init() {
 				{"N", "$2=$4*@3/3", ""},
 				{"R", "$5.KL=$2.K*3/@3", ""},
 				{"L", "$3.K=$3.J+DT*($5.JK-@1.JK)", ""},
-				{"N", "$3=@1*@3/3", ""},
+				{"N", "$3=$5*@3/3", ""},
 				{"R", "@1.KL=$3.K*3/@3", ""},
 			},
 		},
@@ -330,13 +330,13 @@ func init() {
 				{"N", "$2=$4*@3/3", ""},
 				{"R", "$5.KL=$2.K*3/@3", ""},
 				{"L", "$3.K=$3.J+DT*($5.JK-@1.JK)", ""},
-				{"N", "$3=@1*@3/3", ""},
+				{"N", "$3=$5*@3/3", ""},
 				{"R", "@1.KL=$3.K*3/@3", ""},
 				{"L", "@4.K=$1+$2+$3", ""},
 			},
 		},
 		//--------------------------------------------------------------
-		// SMOOTH and AVERAGE functions
+		// SMOOTH functions
 		//--------------------------------------------------------------
 		"SMOOTH": &Function{
 			NumArgs: 2,
@@ -437,6 +437,17 @@ func resolve(x string, mdl *Model) (val float64, res *Result) {
 		}
 	}
 	return
+}
+
+// compare a variable to a value
+func compare(v float64, x float64) int {
+	if math.Abs(v-x) < 1e-9 {
+		return 0
+	}
+	if v > x {
+		return 1
+	}
+	return -1
 }
 
 //----------------------------------------------------------------------
