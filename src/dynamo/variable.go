@@ -51,8 +51,9 @@ const (
 
 	// Kind of variable
 	NAME_KIND_CONST = 0
-	NAME_KIND_LEVEL = 1
-	NAME_KIND_RATE  = 2
+	NAME_KIND_INIT  = 1
+	NAME_KIND_LEVEL = 2
+	NAME_KIND_RATE  = 3
 
 	// Stage of variable
 	NAME_STAGE_NONE = 0 // only constants can have this stage
@@ -161,6 +162,8 @@ func (n *Name) String() (name string) {
 	switch n.Kind {
 	case NAME_KIND_CONST:
 		name += "/C"
+	case NAME_KIND_INIT:
+		name += "/I"
 	case NAME_KIND_LEVEL:
 		name += "/L"
 	case NAME_KIND_RATE:
