@@ -114,7 +114,7 @@ func NewEquation(stmt *Line) (eqns []*Equation, res *Result) {
 			return
 		}
 		if stmt.Mode == "N" {
-			eqn.Target.Kind = NAME_KIND_LEVEL
+			eqn.Target.Kind = NAME_KIND_INIT
 			eqn.Target.Stage = NAME_STAGE_NONE
 		}
 
@@ -179,7 +179,7 @@ func NewEquation(stmt *Line) (eqns []*Equation, res *Result) {
 
 // String returns a human-readable equation formula.
 func (eqn *Equation) String() string {
-	return eqn.Mode + " " + eqn.stmt
+	return "'" + eqn.Mode + ":" + eqn.stmt + "'"
 }
 
 // DependsOn returns true if a variable is referenced in the formula.
