@@ -150,7 +150,7 @@ func NewEquation(stmt *Line) (eqns []*Equation, res *Result) {
 				if eqns, res = HasFunction(eqn.Target, name.Name, x.Args, depth); !res.Ok {
 					break
 				}
-				Dbg.Msgf("Pseudo: %v\n", eqns)
+				Dbg.Msgf("Macro: %v\n", eqns)
 				if len(eqns) == 0 {
 					// check function arguments
 					for _, arg := range x.Args {
@@ -159,6 +159,13 @@ func NewEquation(stmt *Line) (eqns []*Equation, res *Result) {
 						}
 					}
 				}
+				// every function has a level variable (result of the function
+				// evaluation) that is optional; a function may decide to not
+				// store the level.
+				lvl := &ast.BasicLit{
+					Value: NewAutoVar(),
+				}
+				x.Args = append(x.Args, lvl)
 			default:
 				res = Failure(ErrParseSyntax+": %v\n", reflect.TypeOf(x))
 			}
