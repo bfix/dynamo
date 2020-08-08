@@ -53,7 +53,7 @@ const (
 	ErrParseTableTooSmall   = "Not enough table elements"
 	ErrParseUnknownFunction = "Unknown function"
 	ErrParseInvalidNumArgs  = "Invalid number of arguments"
-	ErrParsePseudoDepth     = "Invalid nesting for pseudo function"
+	ErrParseMacroDepth      = "Invalid nesting for macro function"
 )
 
 // Result represents the response of a method call in the Dynamo framework.
