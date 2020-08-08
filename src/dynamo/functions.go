@@ -35,7 +35,7 @@ import (
 // takes a list of (stringed) arguments and returns a numerical result (as
 // well as an status result). The number of arguments is usually fixed per
 // function type.
-// Pseudo functions like DELAY? are also supported; pseudo functions are
+// Macro functions like DELAY? are also supported; Macro functions are
 // not evaluated, but act as "templates" to expand into a set of normal
 // equations, e.g.
 //     R   @1.KL=DELAY1(@2.JK,@3)
@@ -44,18 +44,20 @@ import (
 //     N   $1=@2*@3
 //     R   @1.KL=$1.K/@3
 // $1 is a generated (automatic) variable; @<n> is the n.th name as it appears
-// in the original expression. Pseudo functions can be defined recursively.
+// in the original expression. Macro functions can be defined recursively.
 //
 type Function struct {
 	NumArgs int
 	Fcn     func(args []string, mdl *Model) (Variable, *Result)
-	Pseudo  []*Line
+	Macro   []*Line
 }
 
 var (
 	// fcnList is a collection of available functions
 	fcnList map[string]*Function
-	tvar    *regexp.Regexp
+
+	// regular expression to scan for variables in macros
+	tvar *regexp.Regexp
 )
 
 // Initialize list of defined functions
@@ -74,7 +76,7 @@ func init() {
 				}
 				return
 			},
-			Pseudo: nil,
+			Macro: nil,
 		},
 		"SIN": &Function{
 			NumArgs: 1,
@@ -85,7 +87,7 @@ func init() {
 				}
 				return
 			},
-			Pseudo: nil,
+			Macro: nil,
 		},
 		"COS": &Function{
 			NumArgs: 1,
@@ -96,7 +98,7 @@ func init() {
 				}
 				return
 			},
-			Pseudo: nil,
+			Macro: nil,
 		},
 		"EXP": &Function{
 			NumArgs: 1,
@@ -107,7 +109,7 @@ func init() {
 				}
 				return
 			},
-			Pseudo: nil,
+			Macro: nil,
 		},
 		"LOG": &Function{
 			NumArgs: 1,
@@ -118,7 +120,7 @@ func init() {
 				}
 				return
 			},
-			Pseudo: nil,
+			Macro: nil,
 		},
 		"MAX": &Function{
 			NumArgs: 2,
@@ -135,7 +137,7 @@ func init() {
 				}
 				return
 			},
-			Pseudo: nil,
+			Macro: nil,
 		},
 		"MIN": &Function{
 			NumArgs: 2,
@@ -152,7 +154,7 @@ func init() {
 				}
 				return
 			},
-			Pseudo: nil,
+			Macro: nil,
 		},
 		"CLIP": &Function{
 			NumArgs: 4,
@@ -173,7 +175,7 @@ func init() {
 				}
 				return
 			},
-			Pseudo: nil,
+			Macro: nil,
 		},
 		"SWITCH": &Function{
 			NumArgs: 3,
@@ -192,7 +194,7 @@ func init() {
 				}
 				return
 			},
-			Pseudo: nil,
+			Macro: nil,
 		},
 		//--------------------------------------------------------------
 		// Generating functions
@@ -214,29 +216,21 @@ func init() {
 				}
 				return
 			},
-			Pseudo: nil,
+			Macro: nil,
 		},
 		"RAMP": &Function{
 			NumArgs: 2,
 			Fcn: func(args []string, mdl *Model) (val Variable, res *Result) {
-				var a, b float64
-				if a, res = resolve(args[0], mdl); res.Ok {
-					if b, res = resolve(args[1], mdl); res.Ok {
-						if time, ok := mdl.Current["TIME"]; ok {
-							t := float64(time)
-							if compare(t, b) >= 0 {
-								val = Variable(a * (t - b))
-							} else {
-								val = 0
-							}
-						} else {
-							res = Failure(ErrModelNoTime)
-						}
-					}
+				if val, res = CallFunction("STEP", args, mdl); res.Ok {
+					lvl := args[len(args)-1]
+					dt := mdl.Consts["DT"]
+					v, _ := mdl.Last[lvl]
+					val = v + dt*val
+					mdl.Current[lvl] = val
 				}
 				return
 			},
-			Pseudo: nil,
+			Macro: nil,
 		},
 		"PULSE": &Function{
 			NumArgs: 3,
@@ -257,7 +251,7 @@ func init() {
 				}
 				return
 			},
-			Pseudo: nil,
+			Macro: nil,
 		},
 		"NOISE": &Function{
 			NumArgs: 0,
@@ -266,7 +260,7 @@ func init() {
 				res = Success()
 				return
 			},
-			Pseudo: nil,
+			Macro: nil,
 		},
 		//--------------------------------------------------------------
 		// TABLE functions
@@ -276,21 +270,21 @@ func init() {
 			Fcn: func(args []string, mdl *Model) (val Variable, res *Result) {
 				return table(args, mdl, 0)
 			},
-			Pseudo: nil,
+			Macro: nil,
 		},
 		"TABXT": &Function{
 			NumArgs: 5,
 			Fcn: func(args []string, mdl *Model) (val Variable, res *Result) {
 				return table(args, mdl, 1)
 			},
-			Pseudo: nil,
+			Macro: nil,
 		},
 		"TABPL": &Function{
 			NumArgs: 5,
 			Fcn: func(args []string, mdl *Model) (val Variable, res *Result) {
 				return table(args, mdl, 2)
 			},
-			Pseudo: nil,
+			Macro: nil,
 		},
 		//--------------------------------------------------------------
 		// DELAY functions
@@ -298,7 +292,7 @@ func init() {
 		"DELAY1": &Function{
 			NumArgs: 2,
 			Fcn:     nil,
-			Pseudo: []*Line{
+			Macro: []*Line{
 				{"L", "$1.K=$1.J+DT*(@2.JK-@1.JK)", ""},
 				{"N", "$1=@2*@3", ""},
 				{"R", "@1.KL=$1.K/@3", ""},
@@ -307,7 +301,7 @@ func init() {
 		"DELAY3": &Function{
 			NumArgs: 2,
 			Fcn:     nil,
-			Pseudo: []*Line{
+			Macro: []*Line{
 				{"L", "$1.K=$1.J+DT*(@2.JK-$4.JK)", ""},
 				{"N", "$1=@2*@3/3", ""},
 				{"R", "$4.KL=$1.K*3/@3", ""},
@@ -322,7 +316,7 @@ func init() {
 		"DELAYP": &Function{
 			NumArgs: 2,
 			Fcn:     nil,
-			Pseudo: []*Line{
+			Macro: []*Line{
 				{"L", "$1.K=$1.J+DT*(@2.JK-$4.JK)", ""},
 				{"N", "$1=@2*@3/3", ""},
 				{"R", "$4.KL=$1.K*3/@3", ""},
@@ -341,7 +335,7 @@ func init() {
 		"SMOOTH": &Function{
 			NumArgs: 2,
 			Fcn:     nil,
-			Pseudo: []*Line{
+			Macro: []*Line{
 				{"L", "@1.K=@1.J+(DT/@3)*(@2.J-@1.J)", ""},
 				{"N", "@1=@2", ""},
 			},
@@ -356,18 +350,18 @@ func init() {
 
 // HasFunction checks if a named function is available for given number
 // of arguments.
-func HasFunction(target *Name, name string, args []ast.Expr, depth int) (Pseudo []*Equation, res *Result) {
+func HasFunction(target *Name, name string, args []ast.Expr, depth int) (Macro []*Equation, res *Result) {
 	if f, ok := fcnList[name]; ok {
 		if len(args) != f.NumArgs {
 			return nil, Failure(ErrParseInvalidNumArgs)
 		}
-		if f.Pseudo != nil {
+		if f.Macro != nil {
 			if depth != 0 {
-				// Pseudo functions must resolve at depth 0
-				res = Failure(ErrParsePseudoDepth+": %s", name)
+				// Macro functions must resolve at depth 0
+				res = Failure(ErrParseMacroDepth+": %s", name)
 				return
 			}
-			// expand pseudo function
+			// expand Macro function
 			temps := make(map[string]string)
 			temps["@1"] = target.Name
 			for i, expr := range args {
@@ -378,7 +372,7 @@ func HasFunction(target *Name, name string, args []ast.Expr, depth int) (Pseudo 
 				temps[fmt.Sprintf("@%d", i+2)] = n.Name
 			}
 			var eqns []*Equation
-			for _, eqn := range f.Pseudo {
+			for _, eqn := range f.Macro {
 				line := eqn.Stmt
 				matches := tvar.FindAllString(line, -1)
 				for _, m := range matches {
@@ -393,7 +387,7 @@ func HasFunction(target *Name, name string, args []ast.Expr, depth int) (Pseudo 
 					Mode: eqn.Mode,
 					Stmt: line,
 				})
-				Pseudo = append(Pseudo, eqns...)
+				Macro = append(Macro, eqns...)
 			}
 		}
 		res = Success()
