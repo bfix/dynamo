@@ -41,26 +41,48 @@ A simple inventory control model (Page 124, Figure 3.25)
 This is a base model to show the effects of different test functions (STEP,
 RAMP, NOISE,...) in a model run. See the following specific models:
 
----
-
 <table>
 <tr>
 <td width="30%">
+<hr/>
 <b>inv-1.dynamo</b>
 
-Run with `TEST=1` (Page 125, Figure 3.26) to enable the `STEP` function.
+Run with `TEST1=1` (Page 125, Figure 3.26) to enable the `STEP` function.
 
 <p align="center">
   <img src="inv-1.svg" alt="inv-1.dynamo graph" />
 </p>
 </td>
 <td width="30%">
+<hr/>
 <b>inv-2.dynamo</b>
 
-Run with `TEST=2` (Page 126, Figure 3.27) to enable the `RAMP` function.
+Run with `TEST2=1` (Page 126, Figure 3.27) to enable the `RAMP` function.
 
 <p align="center">
   <img src="inv-2.svg" alt="inv-2.dynamo graph" />
+</p>
+</td>
+</tr>
+<tr>
+<td width="30%">
+<hr/>
+<b>inv-3.dynamo</b>
+
+Run with `TEST3=1` and `INTVL=200` (Page 128, Figure 3.28) to enable the `PULSE` function.
+
+<p align="center">
+  <img src="inv-3.svg" alt="inv-3.dynamo graph" />
+</p>
+</td>
+<td width="30%">
+<hr/>
+<b>inv-4.dynamo</b>
+
+Run with `TEST3=1` and `INTVL=5` (Page 129, Figure 3.29) to enable the `PULSE` function.
+
+<p align="center">
+  <img src="inv-4.svg" alt="inv-4.dynamo graph" />
 </p>
 </td>
 </tr>
