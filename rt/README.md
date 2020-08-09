@@ -39,7 +39,8 @@ A simple epidemic model (Page 96, Figure 3.7)
 A simple inventory control model (Page 124, Figure 3.25)
 
 This is a base model to show the effects of different test functions (STEP,
-RAMP, NOISE,...) in a model run. See the following specific models:
+RAMP, NOISE,...) in a model run. See the following specific models which
+were executed for 100 epochs (101 iterations):
 
 <table>
 <tr>
@@ -85,5 +86,43 @@ Run with `TEST3=1` and `INTVL=5` (Page 129, Figure 3.29) to enable the `PULSE` f
   <img src="inv-4.svg" alt="inv-4.dynamo graph" />
 </p>
 </td>
+</tr>
+<tr>
+<td width="30%">
+<hr/>
+<b>inv-5.dynamo</b>
+
+Run with `TEST4=1` and `PER=5` (Page 130, Figure 3.30) to enable the `SIN` function.
+
+<p align="center">
+  <img src="inv-5.svg" alt="inv-5.dynamo graph" />
+</p>
+</td>
+<td width="30%">
+<hr/>
+<b>inv-6.dynamo</b>
+
+Run with `TEST4=1` and `PER=10` (Page 131, Figure 3.31) to enable the `SIN` function.
+
+<p align="center">
+  <img src="inv-6.svg" alt="inv-6.dynamo graph" />
+</p>
+</td>
+</tr>
+<tr>
+<td width="30%">
+<hr/>
+<b>inv-7.dynamo</b>
+
+Run with `TEST5=1` (Page 132, Figure 3.32) to enable the `NOISE` function.
+
+N.B.: The graph is slightly different from the book,as `NOISE` involves
+randomness; re-running the model would also generate a different graph.
+
+<p align="center">
+  <img src="inv-7.svg" alt="inv-7.dynamo graph" />
+</p>
+</td>
+<td/>
 </tr>
 </table>
