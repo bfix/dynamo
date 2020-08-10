@@ -59,6 +59,7 @@ type State map[string]Variable
 // Model represents a DYNAMO model that can be executed
 type Model struct {
 	Title   string            // title of the model as defined by mode "*"
+	RunID   string            // identifier for model run
 	Eqns    []*Equation       // list of equations
 	Tables  map[string]*Table // list of tables
 	Last    State             // previous state (J)
@@ -255,6 +256,12 @@ func (mdl *Model) AddStatement(stmt *Line) (res *Result) {
 			}
 			mdl.Plot.AddVariable(x[0], []rune(x[1])[0], -1, -1)
 		}
+
+	case "RUN":
+		//--------------------------------------------------------------
+		// Run model
+		mdl.RunID = stmt.Stmt
+
 	default:
 		Dbg.Msgf("Unknown mode '%s'\n", stmt.Mode)
 		res = Failure(ErrParseInvalidMode+": %s", stmt.Mode)
