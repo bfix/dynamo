@@ -2,22 +2,50 @@
 Example models specified in the DYNAMO programming language
 ===========================================================
 
-(c) 2020 Bernd Fix <brf@hoi-polloi.org>   >Y<
+## Real-world models
 
-Dynamo is free software: you can redistribute it and/or modify it
-under the terms of the GNU Affero General Public License as published
-by the Free Software Foundation, either version 3 of the License,
-or (at your option) any later version.
+### CHECO / Project CYBERSYN (checo.dynamo)
 
-Dynamo is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Affero General Public License for more details.
+When in 1972 [Stafford Beer](https://en.wikipedia.org/wiki/Stafford_Beer)
+decided to use the DYNAMO programming language for the economic simulator in
+the project [Cyberstride](https://en.wikipedia.org/wiki/Project_Cybersyn), he
+asked Ron Anderton, the leading expert for DYNAMO in the UK, to start working
+on an implementation of a software that later became known as CHECO (CHilean
+ECOnomy). Together with K.A.Gilligan he designed an initial version; most of
+the work on coding the CHECO simulator had taken place at Queens Mary College
+in London. The software design was later continued by Chilean members of the
+CHECO team with the support and coaching of Anderton.
 
-You should have received a copy of the GNU Affero General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"By September 1972, the economic model described by the CHECO team, which by
+its own admission was 'relatively simple and incomplete', included an inflation
+model that took into account the levels of goods and services, productive
+captial, investment funds, prices and the total currency in the economy." (see
+page 106 of the book "Cybernetic Revolutionaries" by Eden Medina, MIT Press)
 
-SPDX-License-Identifier: AGPL3.0-or-later
+This version of the CHECO simulator is presented here; the design sketch and
+the source code for version 1.0 (September 10th, 1972) are from the document
+"Futuro at September 1972", contained in Box 58 of the Stafford Beer Collection
+at Liverpool John Moores University.
+
+<table>
+<tr>
+<td width="30%">
+  <img src="checo/checo.png" alt="CHECO design sketch" width="100%" />
+</td>
+<td width="10%"/>
+<td width="30%">
+<p><img src="checo/checo.svg" alt="checo.dynamo graph" /></p>
+<ul>
+<li><b>STB</b> = Stocks</li>
+<li><b>CP</b> = Productive capital</li>
+<li><b>CPD</b> = Available capital</li>
+<li><b>FIN</b> = Funds</li>
+<li><b>NVR</b> = Price level (right scale)</li>
+<li><b>CIR</b> = Cash</li>
+</ul>
+</td>
+</tr>
+</table>
 
 ## Example models
 
@@ -31,7 +59,7 @@ Richardson and Alexander L. Pugh III, The MIT Press, 1981 (ISBN
 A simple epidemic model (Page 96, Figure 3.7)
 
 <p align="center">
-  <img src="flu.svg" alt="inv-1.dynamo graph" width="50%" />
+  <img src="flu/flu.svg" alt="inv-1.dynamo graph" width="50%" />
 </p>
 
 ### inventory.dynamo
@@ -51,7 +79,7 @@ were executed for 100 epochs (101 iterations):
 Run with `TEST1=1` (Page 125, Figure 3.26) to enable the `STEP` function.
 
 <p align="center">
-  <img src="inv-1.svg" alt="inv-1.dynamo graph" />
+  <img src="inventory/inv-1.svg" alt="inv-1.dynamo graph" />
 </p>
 </td>
 <td width="30%">
@@ -61,7 +89,7 @@ Run with `TEST1=1` (Page 125, Figure 3.26) to enable the `STEP` function.
 Run with `TEST2=1` (Page 126, Figure 3.27) to enable the `RAMP` function.
 
 <p align="center">
-  <img src="inv-2.svg" alt="inv-2.dynamo graph" />
+  <img src="inventory/inv-2.svg" alt="inv-2.dynamo graph" />
 </p>
 </td>
 </tr>
@@ -73,7 +101,7 @@ Run with `TEST2=1` (Page 126, Figure 3.27) to enable the `RAMP` function.
 Run with `TEST3=1` and `INTVL=200` (Page 128, Figure 3.28) to enable the `PULSE` function.
 
 <p align="center">
-  <img src="inv-3.svg" alt="inv-3.dynamo graph" />
+  <img src="inventory/inv-3.svg" alt="inv-3.dynamo graph" />
 </p>
 </td>
 <td width="30%">
@@ -83,7 +111,7 @@ Run with `TEST3=1` and `INTVL=200` (Page 128, Figure 3.28) to enable the `PULSE`
 Run with `TEST3=1` and `INTVL=5` (Page 129, Figure 3.29) to enable the `PULSE` function.
 
 <p align="center">
-  <img src="inv-4.svg" alt="inv-4.dynamo graph" />
+  <img src="inventory/inv-4.svg" alt="inv-4.dynamo graph" />
 </p>
 </td>
 </tr>
@@ -95,7 +123,7 @@ Run with `TEST3=1` and `INTVL=5` (Page 129, Figure 3.29) to enable the `PULSE` f
 Run with `TEST4=1` and `PER=5` (Page 130, Figure 3.30) to enable the `SIN` function.
 
 <p align="center">
-  <img src="inv-5.svg" alt="inv-5.dynamo graph" />
+  <img src="inventory/inv-5.svg" alt="inv-5.dynamo graph" />
 </p>
 </td>
 <td width="30%">
@@ -105,7 +133,7 @@ Run with `TEST4=1` and `PER=5` (Page 130, Figure 3.30) to enable the `SIN` funct
 Run with `TEST4=1` and `PER=10` (Page 131, Figure 3.31) to enable the `SIN` function.
 
 <p align="center">
-  <img src="inv-6.svg" alt="inv-6.dynamo graph" />
+  <img src="inventory/inv-6.svg" alt="inv-6.dynamo graph" />
 </p>
 </td>
 </tr>
@@ -120,7 +148,7 @@ N.B.: The graph is slightly different from the book,as `NOISE` involves
 randomness; re-running the model would also generate a different graph.
 
 <p align="center">
-  <img src="inv-7.svg" alt="inv-7.dynamo graph" />
+  <img src="inventory/inv-7.svg" alt="inv-7.dynamo graph" />
 </p>
 </td>
 <td/>

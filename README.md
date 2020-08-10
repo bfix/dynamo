@@ -27,7 +27,9 @@ some 50 years ago in various areas; among others:
 
 * Project CYBERSYN (https://en.wikipedia.org/wiki/Project_Cybersyn) used
 DYNAMO for the CHECO part of CYBERSTRIDE to simulate the CHilean ECOnomy during
-the Allende presidency (the project died with Allende on 9/11/1973)
+the Allende presidency (the project died with Allende on 9/11/1973). You can
+find a snapshot of the CHECO implementation (September 1972) in the `rt/checo`
+folder, along with charts and graphs.
 
 * "THE LIMITS TO GROWTH" (https://en.wikipedia.org/wiki/The_Limits_to_Growth)
 used DYNAMO to simulate global developments leading to the famous "Club of
