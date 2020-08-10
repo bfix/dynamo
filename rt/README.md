@@ -4,17 +4,17 @@ Example models specified in the DYNAMO programming language
 
 ## Real-world models
 
-### CHECO / Project CYBERSYN (checo.dynamo)
+### CHECO / Project CYBERSYN
 
 When in 1972 [Stafford Beer](https://en.wikipedia.org/wiki/Stafford_Beer)
 decided to use the DYNAMO programming language for the economic simulator in
 the project [Cyberstride](https://en.wikipedia.org/wiki/Project_Cybersyn), he
 asked Ron Anderton, the leading expert for DYNAMO in the UK, to start working
 on an implementation of a software that later became known as CHECO (CHilean
-ECOnomy). Together with K.A.Gilligan he designed an initial version; most of
-the work on coding the CHECO simulator had taken place at Queens Mary College
-in London. The software design was later continued by Chilean members of the
-CHECO team with the support and coaching of Anderton.
+ECOnomy). Together with K.A.Gilligan they designed an initial version; most of
+the work on coding the CHECO simulator took place at Queens Mary College in
+London. The software design was later continued by Chilean members of the
+CHECO team with the support and coaching from Anderton.
 
 "By September 1972, the economic model described by the CHECO team, which by
 its own admission was 'relatively simple and incomplete', included an inflation
@@ -54,7 +54,7 @@ The example models in this folder are taken from the book
 Richardson and Alexander L. Pugh III, The MIT Press, 1981 (ISBN
 0-262-18102-9).
 
-### flu.dynamo
+### flu
 
 A simple epidemic model (Page 96, Figure 3.7)
 
@@ -62,7 +62,7 @@ A simple epidemic model (Page 96, Figure 3.7)
   <img src="flu/flu.svg" alt="inv-1.dynamo graph" width="50%" />
 </p>
 
-### inventory.dynamo
+### inventory
 
 A simple inventory control model (Page 124, Figure 3.25)
 
