@@ -223,7 +223,7 @@ func init() {
 			Fcn: func(args []string, mdl *Model) (val Variable, res *Result) {
 				if val, res = CallFunction("STEP", args, mdl); res.Ok {
 					lvl := args[len(args)-1]
-					dt := mdl.Consts["DT"]
+					dt := mdl.Current["DT"]
 					v, _ := mdl.Last[lvl]
 					val = v + dt*val
 					mdl.Current[lvl] = val
@@ -266,6 +266,13 @@ func init() {
 		// TABLE functions
 		//--------------------------------------------------------------
 		"TABLE": &Function{
+			NumArgs: 5,
+			Fcn: func(args []string, mdl *Model) (val Variable, res *Result) {
+				return table(args, mdl, 0)
+			},
+			Macro: nil,
+		},
+		"TABHL": &Function{
 			NumArgs: 5,
 			Fcn: func(args []string, mdl *Model) (val Variable, res *Result) {
 				return table(args, mdl, 0)
@@ -409,6 +416,55 @@ func CallFunction(name string, args []string, mdl *Model) (val Variable, res *Re
 		return
 	}
 	val, res = f.Fcn(args, mdl)
+	return
+}
+
+//----------------------------------------------------------------------
+// TABLE to model functions of form "Y = TABLE(X)" (TABHL, TABXT, TABPL)
+//----------------------------------------------------------------------
+
+// Table is a list of values
+type Table struct {
+	Data []float64
+	A_j  []float64
+}
+
+// NewTable creates a new Table from a given list of (stringed) values.
+func NewTable(list []string) (tbl *Table, res *Result) {
+	res = Success()
+
+	// check argument
+	num := len(list)
+	if num < 2 {
+		res = Failure(ErrParseTableTooSmall)
+		return
+	}
+	tbl = new(Table)
+	tbl.Data = make([]float64, num)
+	for i, v := range list {
+		val, err := strconv.ParseFloat(v, 64)
+		if err != nil {
+			res = Failure(err)
+			break
+		}
+		tbl.Data[i] = val
+	}
+
+	// precompute coefficients for Newton polynominal interpolation
+	step := 1. / float64(num-1)
+	var a_mj func(int, int) float64
+	a_mj = func(m, j int) (y float64) {
+		if m == j {
+			y = tbl.Data[m]
+		} else {
+			y = (a_mj(m+1, j) - a_mj(m, j-1)) / (float64(j-m) * step)
+		}
+		return
+	}
+	tbl.A_j = make([]float64, num)
+	for j := 0; j < num; j++ {
+		tbl.A_j[j] = a_mj(0, j)
+	}
 	return
 }
 
