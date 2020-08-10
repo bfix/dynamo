@@ -48,56 +48,12 @@ const (
 type State map[string]Variable
 
 //----------------------------------------------------------------------
-// TABLE to model functions of form "Y = TABLE(X)" (or TABXT or TABPL)
-//----------------------------------------------------------------------
-
-// Table is a list of values
-type Table struct {
-	Data []float64
-	A_j  []float64
-}
-
-// NewTable creates a new Table from a given list of (stringed) values.
-func NewTable(list []string) (tbl *Table, res *Result) {
-	res = Success()
-
-	// check argument
-	num := len(list)
-	if num < 2 {
-		res = Failure(ErrParseTableTooSmall)
-		return
-	}
-	tbl = new(Table)
-	tbl.Data = make([]float64, num)
-	for i, v := range list {
-		val, err := strconv.ParseFloat(v, 64)
-		if err != nil {
-			res = Failure(err)
-			break
-		}
-		tbl.Data[i] = val
-	}
-
-	// precompute coefficients for Newton polynominal interpolation
-	step := 1. / float64(num-1)
-	var a_mj func(int, int) float64
-	a_mj = func(m, j int) (y float64) {
-		if m == j {
-			y = tbl.Data[m]
-		} else {
-			y = (a_mj(m+1, j) - a_mj(m, j-1)) / (float64(j-m) * step)
-		}
-		return
-	}
-	tbl.A_j = make([]float64, num)
-	for j := 0; j < num; j++ {
-		tbl.A_j[j] = a_mj(0, j)
-	}
-	return
-}
-
-//----------------------------------------------------------------------
 // MODEL as defined in a DYNAMO source
+//
+// This implementation does not make a difference between constants,
+// rates, levels, auxiliaries - all variables go into a single "state".
+// The only drawback is that names must be unique across types.
+// The model keeps two states (LAST, CURRENT).
 //----------------------------------------------------------------------
 
 // Model represents a DYNAMO model that can be executed
@@ -105,7 +61,6 @@ type Model struct {
 	Title   string            // title of the model as defined by mode "*"
 	Eqns    []*Equation       // list of equations
 	Tables  map[string]*Table // list of tables
-	Consts  State             // model constants and system settings
 	Last    State             // previous state (J)
 	Current State             // current state (K)
 	Print   *Printer          // printer instance
@@ -117,7 +72,6 @@ func NewModel(printer, plotter string) *Model {
 	mdl := &Model{
 		Eqns:    make([]*Equation, 0),
 		Tables:  make(map[string]*Table),
-		Consts:  make(State),
 		Last:    make(State),
 		Current: make(State),
 	}
@@ -268,7 +222,7 @@ func (mdl *Model) AddStatement(stmt *Line) (res *Result) {
 				res = Failure(err)
 				break
 			}
-			mdl.Consts[x[0]] = Variable(val)
+			mdl.Current[x[0]] = Variable(val)
 			Msgf("        %s = %f\n", x[0], val)
 		}
 
@@ -491,25 +445,17 @@ func (mdl *Model) Get(name *Name) (val Variable, res *Result) {
 	}()
 
 	var ok bool
-	if name.Stage == NAME_STAGE_NONE {
-		if val, ok = mdl.Consts[name.Name]; ok {
-			return
-		}
+	switch name.Stage {
+	case NAME_STAGE_NONE, NAME_STAGE_NEW:
 		if val, ok = mdl.Current[name.Name]; ok {
 			return
 		}
-	}
-	if name.Stage == NAME_STAGE_NEW {
-		if val, ok = mdl.Current[name.Name]; ok {
-			return
-		}
-	}
-	if name.Stage == NAME_STAGE_OLD {
+	case NAME_STAGE_OLD:
 		if val, ok = mdl.Last[name.Name]; ok {
 			return
 		}
 	}
-	res = Failure(ErrModelNoVariable+": %s", name.Name)
+	res = Failure(ErrModelNoVariable+": '%s'", name.Name)
 	return
 }
 
@@ -518,12 +464,7 @@ func (mdl *Model) Get(name *Name) (val Variable, res *Result) {
 // value (current, previous).
 func (mdl *Model) Set(name *Name, val Variable) (res *Result) {
 	res = Success()
-	switch name.Kind {
-	case NAME_KIND_CONST:
-		mdl.Consts[name.Name] = val
-	case NAME_KIND_LEVEL, NAME_KIND_RATE, NAME_KIND_INIT:
-		mdl.Current[name.Name] = val
-	}
+	mdl.Current[name.Name] = val
 	Dbg.Msgf(">    %s = %f\n", name, val)
 	return
 }
@@ -602,13 +543,14 @@ func (mdl *Model) Run() (res *Result) {
 
 	// Running the model
 	Msg("   Iterating epochs:")
-	dt := mdl.Consts["DT"]
-	length := mdl.Consts["LENGTH"]
+	dt := mdl.Current["DT"]
+	length := mdl.Current["LENGTH"]
 	time, ok := mdl.Current["TIME"]
 	if !ok {
 		time = 0.0
 		mdl.Current["TIME"] = time
 	}
+
 	for epoch, t := 1, time; t <= length; epoch, t = epoch+1, t+dt {
 		// compute auxiliaries
 		Msgf("      Epoch %d:\n", epoch)
@@ -636,7 +578,7 @@ func (mdl *Model) Run() (res *Result) {
 		}
 		Dbg.Msgf("[%d] %v\n", epoch, mdl.Current)
 		// propagate in time
-		mdl.Current["TIME"] = mdl.Current["TIME"] + mdl.Consts["DT"]
+		mdl.Current["TIME"] = mdl.Current["TIME"] + mdl.Current["DT"]
 	}
 	return
 }
