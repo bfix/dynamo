@@ -267,16 +267,26 @@ func eval(expr ast.Expr, mdl *Model) (val Variable, res *Result) {
 			switch x := arg.(type) {
 			case *ast.Ident:
 				args[i] = x.Name
+			case *ast.SelectorExpr:
+				var n *Name
+				if n, res = NewName(x); !res.Ok {
+					return
+				}
+				name := n.Name
+				if idx := n.GetIndex(); len(idx) > 0 {
+					name += "." + idx
+				}
+				args[i] = name
 			case *ast.BasicLit:
 				args[i] = x.Value
 			case *ast.BinaryExpr:
 				if val, res = eval(x, mdl); !res.Ok {
-					break
+					return
 				}
 				args[i] = val.String()
 			default:
 				res = Failure(ErrModelFunctionArg+": %s", reflect.TypeOf(x))
-				break
+				return
 			}
 		}
 		val, res = CallFunction(name.Name, args, mdl)
