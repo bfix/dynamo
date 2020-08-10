@@ -156,6 +156,26 @@ func (n *Name) setIndex(idx string) (res *Result) {
 	return
 }
 
+// GetIndex returns the variable index
+func (n *Name) GetIndex() string {
+	if n.Stage == NAME_STAGE_OLD {
+		if n.Kind == NAME_KIND_LEVEL {
+			return "J"
+		}
+		if n.Kind == NAME_KIND_RATE {
+			return "JK"
+		}
+	} else if n.Stage == NAME_STAGE_NEW {
+		if n.Kind == NAME_KIND_LEVEL {
+			return "K"
+		}
+		if n.Kind == NAME_KIND_RATE {
+			return "KL"
+		}
+	}
+	return ""
+}
+
 // String returns a name in human-readable format
 func (n *Name) String() (name string) {
 	name = n.Name
