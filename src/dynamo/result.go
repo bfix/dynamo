@@ -41,6 +41,8 @@ const (
 	ErrModelWrongTableSize    = "Tabe size mismatch"
 	ErrModelNoTime            = "No TIME defined"
 	ErrModelMaxRetry          = "Retry limit reached"
+	ErrModelMissingDef        = "Missing definition of value"
+	ErrModelNoData            = "No data available"
 
 	ErrParseLineLength      = "Line too long"
 	ErrParseInvalidSpace    = "Space in equation"
@@ -54,6 +56,9 @@ const (
 	ErrParseUnknownFunction = "Unknown function"
 	ErrParseInvalidNumArgs  = "Invalid number of arguments"
 	ErrParseMacroDepth      = "Invalid nesting for macro function"
+	ErrParseNotANumber      = "Not a number"
+
+	ErrPlotRange = "Range failure"
 )
 
 // Result represents the response of a method call in the Dynamo framework.
