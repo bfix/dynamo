@@ -54,10 +54,10 @@ Running system model...<br/>
 <tr>
 <td valign="top">
   <img src="checo/checo-plot.png" alt="CHECO plot" width="100%" />
+  <p>The old plot looks a bit different from the new one due to combined Y-axis settings.</p>
 </td>
 <td valign="top">
 <p><img src="checo/checo.svg" alt="checo.dynamo graph" /></p>
-<p>The old plot looks a bit different from the new one due to combined Y-axis settings.</p>
 <ul>
 <li><b>STB</b> = Stocks</li>
 <li><b>CP</b> = Productive capital</li>
