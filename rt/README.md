@@ -68,6 +68,7 @@ $ ../bin/dynamo -g ../work/checo/checo.plt checo/checo.dynamo<br>
 <li><b>NVR</b> = Price level (right scale)</li>
 <li><b>CIR</b> = Cash</li>
 </ul>
+<p>The new plot generated looks a bit different from the original due to combined Y-axis settings.</p>
 </td>
 </tr>
 </table>
