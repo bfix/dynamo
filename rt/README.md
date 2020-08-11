@@ -33,9 +33,7 @@ at Liverpool John Moores University.
   <img src="checo/checo.png" alt="CHECO design sketch" width="100%" />
 </td>
 <td width="30%" valign="bottom">
-<small>
-<code>
-$ ../bin/dynamo -g ../work/checo/checo.plt checo/checo.dynamo<br/>
+<pre><code>
 -----------------------------------<br/>
 DYNAMO interpreter v1.0  (20200728)<br/>
 Copyright (C) 2020, Bernd Fix   &gt;Y&lt;<br/>
@@ -48,9 +46,8 @@ Running system model...<br/>
 &nbsp;&nbsp;&nbsp;Checking state...<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;YNR not used<br/>
 &nbsp;&nbsp;&nbsp;Iterating epochs...<br/>
-&nbsp;&nbsp;&nbsp;Run completed.<br/>
-</code>
-</small>
+&nbsp;&nbsp;&nbsp;Run completed.
+</code></pre>
 </td>
 </tr>
 <tr height="20px"/>
