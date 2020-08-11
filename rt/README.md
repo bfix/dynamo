@@ -34,22 +34,24 @@ at Liverpool John Moores University.
 </td>
 <td width="5%"/>
 <td width="30%" valign="bottom">
+<small>
 <code>
-$ ../bin/dynamo -g ../work/checo/checo.plt checo/checo.dynamo<br>
-2020/08/11 21:46:19 -----------------------------------<br>
-2020/08/11 21:46:19 DYNAMO interpreter v1.0  (20200728)<br>
-2020/08/11 21:46:19 Copyright (C) 2020, Bernd Fix   &gt;Y&lt;<br>
-2020/08/11 21:46:19 -----------------------------------<br>
-2020/08/11 21:46:19 Reading source file 'checo/checo.dynamo'...<br>
-2020/08/11 21:46:19 Building system model...<br>
-2020/08/11 21:46:19 &nbsp;&nbsp;&nbsp;Model generation completed.<br>
-2020/08/11 21:46:19 Running system model...<br>
-2020/08/11 21:46:19 &nbsp;&nbsp;&nbsp;Initializing state...<br>
-2020/08/11 21:46:19 &nbsp;&nbsp;&nbsp;Checking state...<br>
-2020/08/11 21:46:19 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;YNR not used<br>
-2020/08/11 21:46:19 &nbsp;&nbsp;&nbsp;Iterating epochs...<br>
-2020/08/11 21:46:19 &nbsp;&nbsp;&nbsp;Run completed.<br>
+$ ../bin/dynamo -g ../work/checo/checo.plt checo/checo.dynamo<br/>
+2020/08/11 21:46:19 -----------------------------------<br/>
+2020/08/11 21:46:19 DYNAMO interpreter v1.0  (20200728)<br/>
+2020/08/11 21:46:19 Copyright (C) 2020, Bernd Fix   &gt;Y&lt;<br/>
+2020/08/11 21:46:19 -----------------------------------<br/>
+2020/08/11 21:46:19 Reading source file 'checo/checo.dynamo'...<br/>
+2020/08/11 21:46:19 Building system model...<br/>
+2020/08/11 21:46:19 &nbsp;&nbsp;&nbsp;Model generation completed.<br/>
+2020/08/11 21:46:19 Running system model...<br/>
+2020/08/11 21:46:19 &nbsp;&nbsp;&nbsp;Initializing state...<br/>
+2020/08/11 21:46:19 &nbsp;&nbsp;&nbsp;Checking state...<br/>
+2020/08/11 21:46:19 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;YNR not used<br/>
+2020/08/11 21:46:19 &nbsp;&nbsp;&nbsp;Iterating epochs...<br/>
+2020/08/11 21:46:19 &nbsp;&nbsp;&nbsp;Run completed.<br/>
 </code>
+</small>
 </td>
 </tr>
 <tr height="20px"/>
