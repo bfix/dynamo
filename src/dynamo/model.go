@@ -82,10 +82,16 @@ func NewModel(printer, plotter string) *Model {
 }
 
 // Quit is called when done with a model.
-func (mdl *Model) Quit() {
-	Dbg.Close()
-	mdl.Print.Close()
-	mdl.Plot.Close()
+func (mdl *Model) Quit() (res *Result) {
+	// close all outputs
+	if res = Dbg.Close(); !res.Ok {
+		return
+	}
+	if res = mdl.Print.Close(); !res.Ok {
+		return
+	}
+	res = mdl.Plot.Close()
+	return
 }
 
 // Dump logs the current model state in human-readable form into
@@ -233,10 +239,8 @@ func (mdl *Model) AddStatement(stmt *Line) (res *Result) {
 		if res = prepLine(); !res.Ok {
 			break
 		}
-		// print specification
-		for i, level := range strings.Split(strings.Replace(line, "/", ",", -1), ",") {
-			mdl.Print.AddVariable(level, i+1)
-		}
+		// set print specification
+		res = mdl.Print.Prepare(line)
 
 	case "PLOT":
 		//--------------------------------------------------------------
@@ -244,18 +248,8 @@ func (mdl *Model) AddStatement(stmt *Line) (res *Result) {
 		if res = prepLine(); !res.Ok {
 			break
 		}
-		// plot settings
-		if pos := strings.Index(line, "("); pos != -1 {
-			line = line[:pos]
-		}
-		for _, def := range strings.Split(strings.Replace(line, "/", ",", -1), ",") {
-			x := strings.Split(def, "=")
-			if len(x) != 2 {
-				res = Failure(ErrParseSyntax)
-				break
-			}
-			mdl.Plot.AddVariable(x[0], []rune(x[1])[0], -1, -1)
-		}
+		// set plot specification
+		res = mdl.Plot.Prepare(line)
 
 	case "RUN":
 		//--------------------------------------------------------------
@@ -509,13 +503,17 @@ func (mdl *Model) Run() (res *Result) {
 	// Check if all levels have level equations
 	Msg("   Checking state:")
 	check := make(map[string]bool)
+	used := make(map[string]bool)
 	ok := true
 	for level, _ := range mdl.Current {
 		check[level] = false
 		varList = append(varList, level)
 	}
 	for _, eqn := range mdl.Eqns {
-		if strings.Index("CR", eqn.Mode) != -1 {
+		for _, dep := range eqn.Dependencies {
+			used[dep.Name] = true
+		}
+		if strings.Index("CRA", eqn.Mode) != -1 {
 			check[eqn.Target.Name] = true
 			continue
 		}
@@ -528,8 +526,14 @@ func (mdl *Model) Run() (res *Result) {
 		}
 	}
 	for level, val := range check {
+		if strings.Index("TIME;DT;LENGTH;PRTPER;PLTPER;", level+";") != -1 {
+			continue
+		}
 		if !val {
 			Msgf(">     %s has no equation\n", level)
+			ok = false
+		} else if _, inuse := used[level]; !inuse {
+			Msgf(">     %s not used\n", level)
 			ok = false
 		}
 	}
@@ -545,8 +549,12 @@ func (mdl *Model) Run() (res *Result) {
 	}
 
 	// Start printer and plotter
-	mdl.Print.Start()
-	mdl.Plot.Start()
+	if res = mdl.Print.Start(); !res.Ok {
+		return
+	}
+	if res = mdl.Plot.Start(); !res.Ok {
+		return
+	}
 
 	// Running the model
 	Msg("   Iterating epochs:")
@@ -566,10 +574,10 @@ func (mdl *Model) Run() (res *Result) {
 			break
 		}
 		// emit current values for plot and print
-		if res = mdl.Print.Add(); !res.Ok {
+		if res = mdl.Print.Add(epoch); !res.Ok {
 			break
 		}
-		if res = mdl.Plot.Add(); !res.Ok {
+		if res = mdl.Plot.Add(epoch); !res.Ok {
 			break
 		}
 		// propagate state
