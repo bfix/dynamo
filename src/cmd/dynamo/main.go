@@ -38,10 +38,12 @@ func main() {
 		debugFile string
 		printFile string
 		plotFile  string
+		verbose   bool
 	)
 	flag.StringVar(&debugFile, "d", "", "Debug file name (default: none)")
 	flag.StringVar(&printFile, "p", "", "Printer file name (default: none)")
 	flag.StringVar(&plotFile, "g", "", "Plotter file name (default: none)")
+	flag.BoolVar(&verbose, "v", false, "More log messages (default: false)")
 	flag.Parse()
 	if flag.NArg() != 1 {
 		dynamo.Fatal("No DYNAMO source file provided.")
@@ -58,15 +60,18 @@ func main() {
 	dynamo.Msgf("Building system model...")
 	dynamo.SetDebugger(debugFile)
 	mdl := dynamo.NewModel(printFile, plotFile)
+	mdl.Verbose = verbose
 	if res := mdl.Parse(src); !res.Ok {
 		dynamo.Fatalf("Line %d: %s\n", res.Line, res.Err.Error())
 	}
-	mdl.Dump()
+	if verbose {
+		mdl.Dump()
+	}
 	dynamo.Msg("   Model generation completed.")
 
 	dynamo.Msgf("Running system model...")
 	if res := mdl.Run(); !res.Ok {
-		dynamo.Msgf("FAILED: %s\n", res.Err.Error())
+		dynamo.Msgf("   FAILED: %s\n", res.Err.Error())
 	}
 	mdl.Quit()
 	dynamo.Msgf("   Run completed.")

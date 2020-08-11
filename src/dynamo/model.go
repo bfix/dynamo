@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	strict = true
+	strict = true // apply strict DYNAMO language rules
 )
 
 //======================================================================
@@ -66,6 +66,7 @@ type Model struct {
 	Current State             // current state (K)
 	Print   *Printer          // printer instance
 	Plot    *Plotter          // plotter instance
+	Verbose bool              // verbose messaging
 }
 
 // NewModel returns a new (empty) model instance.
@@ -75,6 +76,7 @@ func NewModel(printer, plotter string) *Model {
 		Tables:  make(map[string]*Table),
 		Last:    make(State),
 		Current: make(State),
+		Verbose: false,
 	}
 	mdl.Print = NewPrinter(printer, mdl)
 	mdl.Plot = NewPlotter(plotter, mdl)
@@ -110,18 +112,23 @@ func (mdl *Model) Dump() {
 	for _, e := range mdl.Eqns {
 		incr(e.Mode)
 	}
-	Msgf(">   Number of equations: %4d\n", len(mdl.Eqns))
-	Msgf(">       LEVEL equations: %4d\n", cnt["L"])
-	Msgf(">        RATE equations: %4d\n", cnt["R"])
-	Msgf(">         AUX equations: %4d\n", cnt["A"])
-	Msgf(">       CONST equations: %4d\n", cnt["C"])
-	Msgf(">        INIT equations: %4d\n", cnt["N"])
+	Msg("-----------------------------------")
+	Msgf("   Number of equations: %4d\n", len(mdl.Eqns))
+	Msgf("       LEVEL equations: %4d\n", cnt["L"])
+	Msgf("        RATE equations: %4d\n", cnt["R"])
+	Msgf("         AUX equations: %4d\n", cnt["A"])
+	Msgf("       CONST equations: %4d\n", cnt["C"])
+	Msgf("        INIT equations: %4d\n", cnt["N"])
 	Msg("-----------------------------------")
 	for i, e := range mdl.Eqns {
-		Msgf("> %5d: %s\n", i+1, e.String())
+		Msgf("   %5d: %s\n", i+1, e.String())
 	}
 	Msg("-----------------------------------")
-	Msgf("> Number of TABLE def's: %4d\n", len(mdl.Tables))
+	Msgf(" Number of TABLE def's: %4d\n", len(mdl.Tables))
+	for tname, tbl := range mdl.Tables {
+		Msgf("   %s: %v\n", tname, tbl.Data)
+	}
+	Msg("-----------------------------------")
 }
 
 // AddStatement inserts a new source statement to the model.
@@ -217,7 +224,9 @@ func (mdl *Model) AddStatement(stmt *Line) (res *Result) {
 			break
 		}
 		// model simulation specification
-		Msg("    Runtime specification:")
+		if mdl.Verbose {
+			Msg("   Runtime specification:")
+		}
 		for _, def := range strings.Split(strings.Replace(line, "/", ",", -1), ",") {
 			x := strings.Split(def, "=")
 			if len(x) != 2 {
@@ -230,7 +239,9 @@ func (mdl *Model) AddStatement(stmt *Line) (res *Result) {
 				break
 			}
 			mdl.Current[x[0]] = Variable(val)
-			Msgf("        %s = %f\n", x[0], val)
+			if mdl.Verbose {
+				Msgf("        %s = %f\n", x[0], val)
+			}
 		}
 
 	case "PRINT":
@@ -492,7 +503,7 @@ func (mdl *Model) Run() (res *Result) {
 		return
 	}
 	// Initialize state:
-	Msg("   Initializing state:")
+	Msg("   Initializing state...")
 	mdl.Current["TIME"] = 0
 	if res = compute("CNRA"); !res.Ok {
 		return
@@ -501,7 +512,7 @@ func (mdl *Model) Run() (res *Result) {
 	varList := make([]string, 0)
 
 	// Check if all levels have level equations
-	Msg("   Checking state:")
+	Msg("   Checking state...")
 	check := make(map[string]bool)
 	used := make(map[string]bool)
 	ok := true
@@ -521,7 +532,7 @@ func (mdl *Model) Run() (res *Result) {
 		if _, ok := check[level]; ok {
 			check[level] = true
 		} else {
-			Msgf(">     %s not initialized\n", level)
+			Msgf("      %s not initialized\n", level)
 			ok = false
 		}
 	}
@@ -530,10 +541,10 @@ func (mdl *Model) Run() (res *Result) {
 			continue
 		}
 		if !val {
-			Msgf(">     %s has no equation\n", level)
+			Msgf("      %s has no equation\n", level)
 			ok = false
 		} else if _, inuse := used[level]; !inuse {
-			Msgf(">     %s not used\n", level)
+			Msgf("      %s not used\n", level)
 			ok = false
 		}
 	}
@@ -557,7 +568,7 @@ func (mdl *Model) Run() (res *Result) {
 	}
 
 	// Running the model
-	Msg("   Iterating epochs:")
+	Msg("   Iterating epochs...")
 	dt := mdl.Current["DT"]
 	length := mdl.Current["LENGTH"]
 	time, ok := mdl.Current["TIME"]
@@ -568,8 +579,10 @@ func (mdl *Model) Run() (res *Result) {
 
 	for epoch, t := 1, time; t <= length; epoch, t = epoch+1, t+dt {
 		// compute auxiliaries
-		Msgf("      Epoch %d:\n", epoch)
-		Msg("         Evaluating AUX + RATE equations:")
+		if mdl.Verbose {
+			Msgf("      Epoch %d:\n", epoch)
+			Msg("         Evaluating AUX + RATE equations:")
+		}
 		if res = compute("AR"); !res.Ok {
 			break
 		}
@@ -587,7 +600,9 @@ func (mdl *Model) Run() (res *Result) {
 			mdl.Current[level] = val
 		}
 		// compute new levels
-		Msg("         Evaluating LEVEL equations:")
+		if mdl.Verbose {
+			Msg("         Evaluating LEVEL equations:")
+		}
 		if res = compute("L"); !res.Ok {
 			break
 		}
