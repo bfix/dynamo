@@ -57,6 +57,7 @@ Running system model...<br/>
 </td>
 <td valign="top">
 <p><img src="checo/checo.svg" alt="checo.dynamo graph" /></p>
+<p>The old plot looks a bit different from the new one due to combined Y-axis settings.</p>
 <ul>
 <li><b>STB</b> = Stocks</li>
 <li><b>CP</b> = Productive capital</li>
@@ -65,7 +66,6 @@ Running system model...<br/>
 <li><b>NVR</b> = Price level (right scale)</li>
 <li><b>CIR</b> = Cash</li>
 </ul>
-<p>The new plot generated looks a bit different from the original due to combined Y-axis settings.</p>
 </td>
 </tr>
 </table>
