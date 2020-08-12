@@ -59,6 +59,7 @@ const (
 	ErrParseNotANumber      = "Not a number"
 
 	ErrPlotRange = "Range failure"
+	ErrPlotNoVar = "Not a plot variable"
 )
 
 // Result represents the response of a method call in the Dynamo framework.
