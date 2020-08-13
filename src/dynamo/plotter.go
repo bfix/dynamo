@@ -225,7 +225,7 @@ func (plt *Plotter) Add(epoch int) (res *Result) {
 	res = Success()
 	if plt.file != nil {
 		// check for output epoch
-		if epoch%plt.steps != 1 {
+		if plt.steps > 1 && epoch%plt.steps != 1 {
 			return
 		}
 		// get values for graphed variables
