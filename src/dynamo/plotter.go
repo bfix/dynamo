@@ -250,6 +250,7 @@ var (
 func (plt *Plotter) plot() (res *Result) {
 	res = Success()
 
+	Msgf("   Generating plot...")
 	// calibrate ranges
 	calib := func(y float64, side int) float64 {
 		yl := math.Log10(math.Abs(y))
@@ -271,17 +272,19 @@ func (plt *Plotter) plot() (res *Result) {
 	}
 	// get actual range for each plot group (if not defined in PLOT statement)
 	for _, grp := range plt.grps {
-		if !grp.ValidRange {
-			for _, name := range grp.Vars {
-				pv, ok := plt.vars[name]
-				if !ok {
-					return Failure(ErrPlotNoVar+": %s", name)
-				}
-				grp.Min = math.Min(grp.Min, pv.Min)
-				grp.Max = math.Max(grp.Max, pv.Max)
-			}
-			grp.ValidRange = true
+		if grp.ValidRange {
+			continue
 		}
+		for _, name := range grp.Vars {
+			pv, ok := plt.vars[name]
+			if !ok {
+				return Failure(ErrPlotNoVar+": %s", name)
+			}
+			grp.Min = math.Min(grp.Min, pv.Min)
+			grp.Max = math.Max(grp.Max, pv.Max)
+		}
+		grp.ValidRange = true
+
 		// compute plot/segment width (plot.width = 4 * seg.width)
 		w := 4 * calib((grp.Max-grp.Min)/4, 1)
 		ymin := math.Copysign(calib(grp.Min, -1), grp.Min)
