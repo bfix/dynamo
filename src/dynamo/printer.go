@@ -22,6 +22,7 @@ package dynamo
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"strings"
 )
@@ -117,4 +118,23 @@ func (prt *Printer) Add(epoch int) *Result {
 		prt.file.WriteString("\n")
 	}
 	return Success()
+}
+
+//----------------------------------------------------------------------
+// Helper methods
+//----------------------------------------------------------------------
+
+var (
+	// scale names
+	SCALE = []rune{' ', 'K', 'M', 'G', 'T'}
+)
+
+/// FormatNumber  a number in short form with scale
+func FormatNumber(x float64, frmt string) string {
+	i, v := 0, x
+	for math.Abs(v) > 1000 {
+		i++
+		v /= 1000
+	}
+	return fmt.Sprintf(frmt, v, SCALE[i])
 }
