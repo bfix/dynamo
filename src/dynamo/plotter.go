@@ -21,6 +21,7 @@ package dynamo
 //----------------------------------------------------------------------
 
 import (
+	"fmt"
 	"math"
 	"os"
 	"strconv"
@@ -78,42 +79,52 @@ func NewPlotGroup() *PlotGroup {
 	}
 }
 
-const (
-	// PLT_OVERLAP: y-range overlap for merging vars into single scale
-	PLT_OVERLAP = 0.65
-)
-
-// Merge plot ranges if applicable (or forced). Returns true if merged.
-func (pr *PlotGroup) Merge(pv *PlotVar, forced bool) bool {
-	// check for "no intersection"
-	width := math.Min(pr.Max, pv.Max) - math.Max(pr.Min, pv.Min)
-	if forced || (width > 0 && width/(pr.Max-pr.Min) > PLT_OVERLAP && width/(pv.Max-pv.Min) > PLT_OVERLAP) {
-		// we can merge the ranges
-		pr.Min = math.Min(pr.Min, pv.Min)
-		pr.Max = math.Max(pr.Max, pv.Max)
-		pr.Vars = append(pr.Vars, pv.Name)
-		return true
-	}
-	return false
+// Norm returns the position of the y-value on the axis [0,1]
+func (pg *PlotGroup) Norm(y float64) float64 {
+	return (y - pg.Min) / (pg.Max - pg.Min)
 }
 
 //----------------------------------------------------------------------
 // Plotter
 //----------------------------------------------------------------------
 
+// Plotting modes
+const (
+	PLT_DYNAMO = iota // Old-style DYNAMO plotting mode (ASCII)
+)
+
 // Plotter to generate graphs from DYNAMO data
 type Plotter struct {
 	file  *os.File            // reference to debug file (or nil if not defined)
+	mode  int                 // plotting mode (PLT_????)
 	mdl   *Model              // back-ref to model instance
 	stmt  string              // PLOT statement
 	steps int                 // number of DT steps between plotting points
 	vars  map[string]*PlotVar // variables to use in graphs
 	grps  []*PlotGroup        // plot ranges
+	x0    float64             // first x position
+	dx    float64             // x-step
+	xnum  int                 // number of x-values
 }
 
 // NewPlotter instantiates a new plotter output.
 func NewPlotter(file string, mdl *Model) *Plotter {
-	plt := new(Plotter)
+	// determine plotting mode from file name
+	mode := PLT_DYNAMO
+	if pos := strings.LastIndex(file, "."); pos != -1 {
+		switch strings.ToUpper(file[pos:]) {
+		case ".PRT":
+			mode = PLT_DYNAMO
+		}
+	}
+	// create new plotting instance
+	plt := &Plotter{
+		mdl:  mdl,
+		mode: mode,
+		vars: make(map[string]*PlotVar),
+		grps: make([]*PlotGroup, 0),
+		xnum: 0,
+	}
 	if len(file) == 0 {
 		plt.file = nil
 	} else {
@@ -122,9 +133,6 @@ func NewPlotter(file string, mdl *Model) *Plotter {
 			Fatal(err.Error())
 		}
 	}
-	plt.mdl = mdl
-	plt.vars = make(map[string]*PlotVar)
-	plt.grps = make([]*PlotGroup, 0)
 	return plt
 }
 
@@ -189,6 +197,10 @@ func (plt *Plotter) Start() (res *Result) {
 	res = Success()
 	if plt.file != nil {
 		// get plot stepping
+		x0, ok := plt.mdl.Current["TIME"]
+		if !ok {
+			return Failure(ErrModelMissingDef + ": TIME")
+		}
 		pp, ok := plt.mdl.Current["PLTPER"]
 		if !ok {
 			return Failure(ErrModelMissingDef + ": PLTPER")
@@ -201,6 +213,8 @@ func (plt *Plotter) Start() (res *Result) {
 		if compare(float64(pp), float64(steps)*float64(dt)) != 0 {
 			Msgf("WARNING: PLTPER != n * DT")
 		}
+		plt.x0 = float64(x0)
+		plt.dx = float64(pp)
 		plt.steps = steps
 	}
 	return
@@ -222,11 +236,13 @@ func (plt *Plotter) Add(epoch int) (res *Result) {
 			}
 			pv.Add(float64(val))
 		}
+		plt.xnum++
 	}
 	return
 }
 
 var (
+	// LOG_FACTOR for range bounds (equidistant in log scale)
 	LOG_FACTOR = []float64{0.5, 1, 2, 5, 10}
 )
 
@@ -236,7 +252,7 @@ func (plt *Plotter) plot() (res *Result) {
 
 	// calibrate ranges
 	calib := func(y float64, side int) float64 {
-		yl := math.Log10(y)
+		yl := math.Log10(math.Abs(y))
 		yb := math.Floor(yl)
 		yf := (yl - yb)
 		yk := 1
@@ -248,7 +264,7 @@ func (plt *Plotter) plot() (res *Result) {
 		case yf > 0:
 			yk = 2
 		}
-		if side < 0 {
+		if side < 0 && y > 0 {
 			yk = yk - 1
 		}
 		return LOG_FACTOR[yk] * math.Pow10(int(yb))
@@ -268,8 +284,8 @@ func (plt *Plotter) plot() (res *Result) {
 		}
 		// compute plot/segment width (plot.width = 4 * seg.width)
 		w := 4 * calib((grp.Max-grp.Min)/4, 1)
-		ymin := math.Copysign(calib(math.Abs(grp.Min), -1), grp.Min)
-		ymax := math.Copysign(calib(math.Abs(grp.Max), 1), grp.Max)
+		ymin := math.Copysign(calib(grp.Min, -1), grp.Min)
+		ymax := math.Copysign(calib(grp.Max, 1), grp.Max)
 		// adjust boundaries to width; use bound with smaller error
 		if grp.Max < ymin+w {
 			grp.Min = ymin
@@ -281,9 +297,78 @@ func (plt *Plotter) plot() (res *Result) {
 			res = Failure(ErrPlotRange)
 		}
 	}
-	// now do the actual "plotting": the first DYNAMO implementations used
-	// ASCII-based plots on long sheets of paper; this one creates SVG graphs
-	// of the data, but with a similar "approach" like the old plot routines.
-
+	// now do the actual plotting
+	switch plt.mode {
+	case PLT_DYNAMO:
+		res = plt.plot_dyn()
+	}
 	return
+}
+
+//----------------------------------------------------------------------
+// Plot routines
+//----------------------------------------------------------------------
+
+func (plt *Plotter) plot_dyn() *Result {
+
+	// make horizontal plot line without graph
+	mkLine := func(x float64, i int) string {
+		line := make([]byte, 102)
+		for j := range line {
+			line[j] = ' '
+			if i%10 == 0 {
+				if j%2 == 0 {
+					line[j] = '-'
+				}
+			} else {
+				if j%25 == 0 {
+					line[j] = '.'
+				}
+			}
+		}
+		if i%10 == 0 {
+			return fmt.Sprintf("%10.3f%s", x, line)
+		}
+		return fmt.Sprintf("          %s", line)
+	}
+
+	// emit plot header
+	fmt.Fprintf(plt.file, "Plot for '%s'\n", plt.mdl.RunID)
+	fmt.Fprintf(plt.file, "         %s\n", plt.stmt)
+	fmt.Fprintln(plt.file)
+
+	// emit plot y-axis (multiple scales; one per plot group)
+	for _, grp := range plt.grps {
+		s := ""
+		for _, v := range grp.Vars {
+			pv := plt.vars[v]
+			if len(s) > 0 {
+				s += ","
+			}
+			s += fmt.Sprintf("%s=%c", pv.Name, pv.Sym)
+		}
+		w := (grp.Max - grp.Min) / 4.
+		y0 := FormatNumber(grp.Min, "%4.f.%c")
+		y1 := FormatNumber(grp.Min+w, "%4.f.%c")
+		y2 := FormatNumber(grp.Min+2*w, "%4.f.%c")
+		y3 := FormatNumber(grp.Min+3*w, "%4.f.%c")
+		y4 := FormatNumber(grp.Max, "%4.f.%c")
+		fmt.Fprintf(plt.file, "%12s%25s%25s%25s%25s %s\n", y0, y1, y2, y3, y4, s)
+	}
+	// draw graph
+	for x, i := plt.x0, 0; i < plt.xnum; x, i = x+plt.dx, i+1 {
+		line := []rune(mkLine(x, i))
+		for _, grp := range plt.grps {
+			for _, v := range grp.Vars {
+				pv := plt.vars[v]
+				pos := int(math.Round(100*grp.Norm(pv.Values[i]))) + 11
+				if pos < 11 || pos > 111 {
+					Msgf("y=%f, range=(%f,%f)\n", pv.Values[i], grp.Min, grp.Max)
+				}
+				line[pos] = pv.Sym
+			}
+		}
+		fmt.Fprintln(plt.file, string(line))
+	}
+	return Success()
 }
