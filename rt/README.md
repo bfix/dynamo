@@ -55,6 +55,8 @@ Running system model...<br/>
 <td valign="top">
   <img src="checo/checo-plot.png" alt="CHECO plot" width="100%" />
   <p>The old plot looks a bit different from the new one due to combined Y-axis settings.</p>
+  <p>The sinodial form of the stock curve seems to be a model error; the note on the design
+  sketch annotates for CPRR: "This causes instability - stock cycle is an ARTEFACT".</p>
 </td>
 <td valign="top">
 <p><img src="checo/checo.svg" alt="checo.dynamo graph" /></p>
