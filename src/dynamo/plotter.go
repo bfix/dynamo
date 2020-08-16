@@ -38,23 +38,8 @@ import (
 
 // PlotVar is a (time series) variable to be plotted (level or rate)
 type PlotVar struct {
-	Name     string    // variable name
-	Sym      rune      // plotting symbol (in ASCII plots)
-	Min, Max float64   // plot range
-	Values   []float64 // variable values
-}
-
-// Add a PlotVar value
-func (pv *PlotVar) Add(y float64) {
-	if len(pv.Values) == 0 {
-		pv.Min = y
-		pv.Max = y
-	} else if y < pv.Min {
-		pv.Min = y
-	} else if y > pv.Max {
-		pv.Max = y
-	}
-	pv.Values = append(pv.Values, y)
+	TSVar
+	Sym rune // plotting symbol (in ASCII plots)
 }
 
 //----------------------------------------------------------------------
@@ -178,11 +163,11 @@ func (plt *Plotter) Prepare(stmt string) (res *Result) {
 				return
 			}
 			pv := &PlotVar{
-				Name:   x[0],
-				Sym:    []rune(x[1])[0],
-				Min:    0,
-				Max:    0,
-				Values: make([]float64, 0),
+				TSVar: TSVar{
+					Name:   x[0],
+					Values: make([]float64, 0),
+				},
+				Sym: []rune(x[1])[0],
 			}
 			plt.vars[x[0]] = pv
 			// add member to group
@@ -304,6 +289,8 @@ func (plt *Plotter) plot() (res *Result) {
 	switch plt.mode {
 	case PLT_DYNAMO:
 		res = plt.plot_dyn()
+	default:
+		res = Failure(ErrPlotMode)
 	}
 	return
 }
