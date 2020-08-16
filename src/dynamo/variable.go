@@ -208,13 +208,37 @@ func (n *Name) Compare(m *Name) int {
 }
 
 //----------------------------------------------------------------------
-// VARIABLE -- represents the "value" and "change rate" of a state.
+// VARIABLE -- represents variables in equations.
 //----------------------------------------------------------------------
 
 // Variable has a floating point value
 type Variable float64
 
-// String returns the human-readable representation of a variabe
+// String returns the human-readable representation of a variable
 func (v Variable) String() string {
 	return fmt.Sprintf("%f", v)
+}
+
+//----------------------------------------------------------------------
+// TSVar -- Time-series variable
+//----------------------------------------------------------------------
+
+// TSVar is a named variable with a list of values (time series)
+type TSVar struct {
+	Name     string    // variable name
+	Min, Max float64   // plot range
+	Values   []float64 // time-series of values
+}
+
+// Add a TSVar value
+func (ts *TSVar) Add(y float64) {
+	if len(ts.Values) == 0 {
+		ts.Min = y
+		ts.Max = y
+	} else if y < ts.Min {
+		ts.Min = y
+	} else if y > ts.Max {
+		ts.Max = y
+	}
+	ts.Values = append(ts.Values, y)
 }
