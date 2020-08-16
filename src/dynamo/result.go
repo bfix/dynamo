@@ -60,6 +60,10 @@ const (
 
 	ErrPlotRange = "Range failure"
 	ErrPlotNoVar = "Not a plot variable"
+	ErrPlotMode  = "No such plotter mode"
+
+	ErrPrintNoVar = "Not a print variable"
+	ErrPrintMode  = "No such plotter mode"
 )
 
 // Result represents the response of a method call in the Dynamo framework.
