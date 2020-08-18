@@ -369,7 +369,7 @@ func (prt *Printer) print_csv() (res *Result) {
 		}
 		prt.file.WriteString(name)
 	}
-	fmt.Println(prt.file)
+	fmt.Fprintln(prt.file)
 	// emit data
 	for x := 0; x < prt.xnum; x++ {
 		for i, name := range list {
@@ -382,7 +382,7 @@ func (prt *Printer) print_csv() (res *Result) {
 			}
 			fmt.Fprintf(prt.file, "%f", pv.Values[x])
 		}
-		fmt.Println(prt.file)
+		fmt.Fprintln(prt.file)
 	}
 
 	return
