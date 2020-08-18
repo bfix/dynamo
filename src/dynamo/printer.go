@@ -298,7 +298,7 @@ func (prt *Printer) print_dyn() (res *Result) {
 		list[col] = nil
 		if pc, ok := prt.cols[col]; ok {
 			list[col] = pc.Vars
-			maxcol = col
+			maxcol = col + 1
 			for _, name := range pc.Vars {
 				pc.mergeScale(prt.vars[name].Scale)
 			}
