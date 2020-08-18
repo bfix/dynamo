@@ -529,14 +529,15 @@ func table(args []string, mdl *Model, mode int) (val Variable, res *Result) {
 		return
 	}
 	// check if parameters match table data
-	n := len(tbl.Data)
-	if n != int((max-min)/step)+1 {
+	n := float64(len(tbl.Data) - 1)
+	if compare(max-min, n*step) != 0 {
 		res = Failure(ErrModelWrongTableSize)
+		return
 	}
 	// get inter-/extrapolation parameters
-	pos := (x - min) / (max - min)
-	idx := int(pos / step)
-	frac := pos/step - float64(idx)
+	pos := n * (x - min) / (max - min)
+	idx := int(pos)
+	frac := pos - float64(idx)
 	Dbg.Msgf("TABLE: x=%f, pos=%f, idx=%d, frac=%f\n", x, pos, idx, frac)
 
 	if mode == 2 {
