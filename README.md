@@ -27,9 +27,9 @@ some 50 years ago in various areas; among others:
 
 * Project CYBERSYN (https://en.wikipedia.org/wiki/Project_Cybersyn) used
 DYNAMO for the CHECO part of CYBERSTRIDE to simulate the CHilean ECOnomy during
-the Allende presidency (the project died with Allende on 9/11/1973). You can
-find a snapshot of the CHECO implementation (September 1972) in the `rt/checo`
-folder, along with charts and graphs.
+the Allende presidency (the project died with Allende on September
+11<sup>th</sup>, 1973. You can find a snapshot of the CHECO implementation from
+September 1972 in the `rt/checo` folder, along with charts and graphs.
 
 * "THE LIMITS TO GROWTH" (https://en.wikipedia.org/wiki/The_Limits_to_Growth)
 used DYNAMO to simulate global developments leading to the famous "Club of
@@ -46,33 +46,42 @@ and I am happy to work on the interpreter to make them run again.
 
 ## Build the interpreter
 
-In the base directory of this repository issue the following command to build
-the DYNAMO interpreter:
+At the moment no pre-built binaries of the DYNAMO interpreter are provided; to
+build the application, you need a working installation of Go
+(https://golang.org/) on your computer; make sure your Go installation is
+up-to-date (at least Go1.11).
+
+In the base directory of this repository issue the following command:
 
 ```bash
 GOPATH=$(pwd) go build -o dynamo src/cmd/dynamo/main.go
 ```
 
-Make sure your Go installation is up-to-date (Go1.11+) and available.
-
 ## Running a DYNAMO model
 
-Change into the `rt/` (runtime) folder; here you can find some sample DYNAMO
-models to play around with. For example you run the epidemic model with the
-following command:
+Change into the `rt/` (runtime) folder; below that folder you can find sample
+DYNAMO models to play around with. For example you can run the epidemic model
+with the following command:
 
 ```bash
-../dynamo -p flu.prt flu.dynamo
+../dynamo -p ~/flu.prt book/flu/flu.dynamo
 ```
 
-This will run the `flu.dynamo` model and generate print output in the file
-`flu.prt` (the plotter output is not working yet).
+This will run the `flu.dynamo` model from the specified subfolder and generate
+print output in the file `~/flu.prt`.
 
 The following options are available:
 
-* `-d <debug-file>`: write debug output to specified file. Use `-` to log to console.
-* `-p <print-file>`: write printer output to file
-* `-g <plot-file>`: write plot output to file (plot output not implemented yet)
+* `-d <debug-file>`: write debug output to specified file. Use `-` to log to
+console.
+* `-p <print-file>`: write printer output to file: the extension used in the
+filename specifies which print format to use:
+    * `.prt`: Generate classic DYNAMO print output
+    * `.csv`: Generate CSV-compatible files (e.g. for import into other apps)
+* `-g <plot-file>`: write plot output to file: the extension used in the
+filename specifies whicht plot format to use:
+    * `.plt`: Generate classic DYNAMO plot output
+    * `.svg`: Generate SVG plots (not implemented yet).
 
-See the README in the `rt/` folder for more details on the example models
-provided.
+See the README in the `rt/` folder and subfolders for more details on the
+example models provided.
