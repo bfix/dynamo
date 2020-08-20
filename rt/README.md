@@ -1,181 +1,45 @@
 
-Example models specified in the DYNAMO programming language
-===========================================================
+# Example models in the DYNAMO programming language
 
 ## Real-world models
 
 ### CHECO / Project CYBERSYN
 
-When in 1972 [Stafford Beer](https://en.wikipedia.org/wiki/Stafford_Beer)
-decided to use the DYNAMO programming language for the economic simulator in
-the project [Cyberstride](https://en.wikipedia.org/wiki/Project_Cybersyn), he
-asked Ron Anderton, the leading expert for DYNAMO in the UK, to start working
-on an implementation of a software that later became known as CHECO (CHilean
-ECOnomy). Together with K.A.Gilligan they designed an initial version; most of
-the work on coding the CHECO simulator took place at Queens Mary College in
-London. The software design was later continued by Chilean members of the
-CHECO team with the support and coaching from Anderton.
+[Project CYBERSYN](https://en.wikipedia.org/wiki/Project_Cybersyn) (short for
+CYBERnetic SYNergy) was the attempt of the British cybernetician
+[Stafford Beer](https://en.wikipedia.org/wiki/Stafford_Beer) to help manage
+the Chilean economy (CHECO) with a single IBM mainframe and 99 telex machines
+in 1972/73. The project was never finished; it ended with the coup d'etat
+against the Allende presidency on Sepember 11<sup>th</sup>, 1973.
 
-"By September 1972, the economic model described by the CHECO team, which by
-its own admission was 'relatively simple and incomplete', included an inflation
-model that took into account the levels of goods and services, productive
-captial, investment funds, prices and the total currency in the economy." (see
-page 106 of the book "Cybernetic Revolutionaries" by Eden Medina, MIT Press)
+The CHECO simulator was written in DYNAMO; the very first version (1.0,
+Sepember 10<sup>th</sup>, 1972) can be found in the `checo/` folder.
+Never versions of the simulator are possibly lost; the first version was
+recovered from documents found in the _Stafford Beer Collection_ at the
+Liverpool John Moores University.
 
-This version of the CHECO simulator is presented here; the design sketch and
-the source code for version 1.0 (September 10th, 1972) are from the document
-"Futuro at September 1972", contained in Box 58 of the Stafford Beer Collection
-at Liverpool John Moores University.
+### World Dynamics
 
-<table>
-<tr>
-<td width="30%" valign="top">
-  <img src="checo/checo.png" alt="CHECO design sketch" width="100%" />
-</td>
-<td width="30%" valign="bottom">
-<pre><code>
------------------------------------<br/>
-DYNAMO interpreter v1.0  (20200728)<br/>
-Copyright (C) 2020, Bernd Fix   &gt;Y&lt;<br/>
------------------------------------<br/>
-Reading source file 'checo/checo.dynamo'...<br/>
-Building system model...<br/>
-&nbsp;&nbsp;&nbsp;Model generation completed.<br/>
-Running system model...<br/>
-&nbsp;&nbsp;&nbsp;Initializing state...<br/>
-&nbsp;&nbsp;&nbsp;Checking state...<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;YNR not used<br/>
-&nbsp;&nbsp;&nbsp;Iterating epochs...<br/>
-&nbsp;&nbsp;&nbsp;Run completed.
-</code></pre>
-</td>
-</tr>
-<tr height="20px"/>
-<tr>
-<td valign="top">
-  <img src="checo/checo-plot.png" alt="CHECO plot" width="100%" />
-  <p>The old plot looks a bit different from the new one due to combined Y-axis settings.</p>
-  <p>The sinodial form of the stock curve seems to be a model error; the note on the design
-  sketch annotates for CPRR: "This causes instability - stock cycle is an ARTEFACT".</p>
-</td>
-<td valign="top">
-<p><img src="checo/checo.svg" alt="checo.dynamo graph" /></p>
-<ul>
-<li><b>STB</b> = Stocks</li>
-<li><b>CP</b> = Productive capital</li>
-<li><b>CPD</b> = Available capital</li>
-<li><b>FIN</b> = Funds</li>
-<li><b>NVR</b> = Price level (right scale)</li>
-<li><b>CIR</b> = Cash</li>
-</ul>
-</td>
-</tr>
-</table>
+In his book _World Dynamics_ (published in 1971)
+[J.W. Forrester][https://en.wikipedia.org/wiki/Jay_Wright_Forrester)
+designed a model to simulate the system dynamics of the world's population,
+food supply, natural resources, pollution and many other key features. This
+model - called _WORLD2_ - was written in DYNAMO and published in the book
+on pages 136-138.
 
-## Example models
+A [newer DYNAMO model](https://en.wikipedia.org/wiki/World3) - called _WORLD3_ -
+was used by Dennis Meadows et al. as a basis for the report "_The Limits to
+Growth_".
 
-The example models in this folder are taken from the book
+Both models can be found in the folder `world`.
+
+**N.B.: The WORLD3 model is not available yet - hopefully coming soon!**
+
+## Models from the book "Introduction to System Dynamics Modeling with DYNAMO"
+
+The example models in the folder `book/` are taken from the book
 **Introduction to System Dynamics Modeling with DYNAMO** by George P.
 Richardson and Alexander L. Pugh III, The MIT Press, 1981 (ISBN
 0-262-18102-9).
 
-### flu
-
-A simple epidemic model (Page 96, Figure 3.7)
-
-<p align="center">
-  <img src="flu/flu.svg" alt="inv-1.dynamo graph" width="50%" />
-</p>
-
-### inventory
-
-A simple inventory control model (Page 124, Figure 3.25)
-
-This is a base model to show the effects of different test functions (STEP,
-RAMP, NOISE,...) in a model run. See the following specific models which
-were executed for 100 epochs (101 iterations):
-
-<table>
-<tr>
-<td width="30%">
-<hr/>
-<b>inv-1.dynamo</b>
-
-Run with `TEST1=1` (Page 125, Figure 3.26) to enable the `STEP` function.
-
-<p align="center">
-  <img src="inventory/inv-1.svg" alt="inv-1.dynamo graph" />
-</p>
-</td>
-<td width="30%">
-<hr/>
-<b>inv-2.dynamo</b>
-
-Run with `TEST2=1` (Page 126, Figure 3.27) to enable the `RAMP` function.
-
-<p align="center">
-  <img src="inventory/inv-2.svg" alt="inv-2.dynamo graph" />
-</p>
-</td>
-</tr>
-<tr>
-<td width="30%">
-<hr/>
-<b>inv-3.dynamo</b>
-
-Run with `TEST3=1` and `INTVL=200` (Page 128, Figure 3.28) to enable the `PULSE` function.
-
-<p align="center">
-  <img src="inventory/inv-3.svg" alt="inv-3.dynamo graph" />
-</p>
-</td>
-<td width="30%">
-<hr/>
-<b>inv-4.dynamo</b>
-
-Run with `TEST3=1` and `INTVL=5` (Page 129, Figure 3.29) to enable the `PULSE` function.
-
-<p align="center">
-  <img src="inventory/inv-4.svg" alt="inv-4.dynamo graph" />
-</p>
-</td>
-</tr>
-<tr>
-<td width="30%">
-<hr/>
-<b>inv-5.dynamo</b>
-
-Run with `TEST4=1` and `PER=5` (Page 130, Figure 3.30) to enable the `SIN` function.
-
-<p align="center">
-  <img src="inventory/inv-5.svg" alt="inv-5.dynamo graph" />
-</p>
-</td>
-<td width="30%">
-<hr/>
-<b>inv-6.dynamo</b>
-
-Run with `TEST4=1` and `PER=10` (Page 131, Figure 3.31) to enable the `SIN` function.
-
-<p align="center">
-  <img src="inventory/inv-6.svg" alt="inv-6.dynamo graph" />
-</p>
-</td>
-</tr>
-<tr>
-<td width="30%">
-<hr/>
-<b>inv-7.dynamo</b>
-
-Run with `TEST5=1` (Page 132, Figure 3.32) to enable the `NOISE` function.
-
-N.B.: The graph is slightly different from the book,as `NOISE` involves
-randomness; re-running the model would also generate a different graph.
-
-<p align="center">
-  <img src="inventory/inv-7.svg" alt="inv-7.dynamo graph" />
-</p>
-</td>
-<td/>
-</tr>
-</table>
+All models can be found below the `book` folder.
