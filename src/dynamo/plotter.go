@@ -367,12 +367,12 @@ func (plt *Plotter) plot_dyn(pj *PlotJob) *Result {
 			s += fmt.Sprintf("%s=%c", pv.Name, pv.Sym)
 		}
 		w := (grp.Max - grp.Min) / 4.
-		y0 := FormatNumber(grp.Min, "%4.f.%c")
-		y1 := FormatNumber(grp.Min+w, "%4.f.%c")
-		y2 := FormatNumber(grp.Min+2*w, "%4.f.%c")
-		y3 := FormatNumber(grp.Min+3*w, "%4.f.%c")
-		y4 := FormatNumber(grp.Max, "%4.f.%c")
-		fmt.Fprintf(plt.file, "%12s%25s%25s%25s%25s %s\n", y0, y1, y2, y3, y4, s)
+		y0 := FormatNumber(grp.Min, 4, 3)
+		y1 := FormatNumber(grp.Min+w, 4, 3)
+		y2 := FormatNumber(grp.Min+2*w, 4, 3)
+		y3 := FormatNumber(grp.Min+3*w, 4, 3)
+		y4 := FormatNumber(grp.Max, 4, 3)
+		fmt.Fprintf(plt.file, "%14s%25s%25s%25s%25s %s\n", y0, y1, y2, y3, y4, s)
 	}
 	// draw graph
 	for x, i := plt.x0, 0; i < plt.xnum; x, i = x+plt.dx, i+1 {
