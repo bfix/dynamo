@@ -31,7 +31,7 @@ A [newer DYNAMO model](https://en.wikipedia.org/wiki/World3) - called _WORLD3_ -
 was used by Dennis Meadows et al. as a basis for the report "_The Limits to
 Growth_".
 
-Both models can be found in the folder `world`.
+Both models can be found in the folder `world/`.
 
 **N.B.: The WORLD3 model is not available yet - hopefully coming soon!**
 
@@ -42,4 +42,12 @@ The example models in the folder `book/` are taken from the book
 Richardson and Alexander L. Pugh III, The MIT Press, 1981 (ISBN
 0-262-18102-9).
 
-All models can be found below the `book` folder.
+All models can be found below the `book/` folder.
+
+## Miscellaneous models
+
+A collection of DYNAMO models found in the wild is in the `rt/misc/` folder.
+
+If you have old DYNAMO models and want to share them, please send them to me
+with a description what they are about. Intersting models will be included in
+this collection.
