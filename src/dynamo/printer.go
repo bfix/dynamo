@@ -93,6 +93,31 @@ func (pc *PrtCol) mergeScale(scale float64) {
 }
 
 //----------------------------------------------------------------------
+// Print jobs
+//----------------------------------------------------------------------
+
+// PrintJob is printing a single table of selected variables
+type PrintJob struct {
+	stmt string          // PRINT statement
+	prt  *Printer        // printer instance
+	cols map[int]*PrtCol // print columns
+}
+
+// NewPrintJob creates a new print job for the printer based on
+// the PRINT statement.
+func NewPrintJob(stmt string, prt *Printer) *PrintJob {
+	pj := &PrintJob{
+		stmt: stmt,
+		prt:  prt,
+		cols: make(map[int]*PrtCol, 1),
+	}
+	// Add TIME as first column
+	prt.vars["TIME"] = NewPrtVar("TIME")
+	pj.cols[0] = NewPrtCol().Add("TIME")
+	return pj
+}
+
+//----------------------------------------------------------------------
 // Printer
 //----------------------------------------------------------------------
 
@@ -107,11 +132,10 @@ type Printer struct {
 	file  *os.File           // reference to print file (or nil if not defined)
 	mode  int                // printing mode (PRT_????)
 	mdl   *Model             // back-ref to model instance
-	stmt  string             // PRINT statement
 	steps int                // number of DT steps between printed points
 	vars  map[string]*PrtVar // variables to use in print
-	cols  map[int]*PrtCol    // print columns
 	xnum  int                // number of x-values
+	jobs  []*PrintJob        // list of print jobs to perform
 }
 
 // NewPrinter instantiates a new printer output.
@@ -131,11 +155,8 @@ func NewPrinter(file string, mdl *Model) *Printer {
 		mdl:  mdl,
 		mode: mode,
 		vars: make(map[string]*PrtVar),
-		cols: make(map[int]*PrtCol),
+		jobs: make([]*PrintJob, 0),
 	}
-	// Add TIME as first column
-	prt.vars["TIME"] = NewPrtVar("TIME")
-	prt.cols[0] = NewPrtCol().Add("TIME")
 	// open file for output
 	if len(file) == 0 {
 		prt.file = nil
@@ -162,9 +183,13 @@ func (prt *Printer) Close() (res *Result) {
 // Prepare the printer for output ased on the PRINT statement
 func (prt *Printer) Prepare(stmt string) (res *Result) {
 	res = Success()
-	var err error
-	prt.stmt = stmt
+
+	// create a new print job
+	pj := NewPrintJob(stmt, prt)
+	prt.jobs = append(prt.jobs, pj)
+
 	// split into column groups
+	var err error
 	grps := strings.Split(stmt, "/")
 	if len(grps) == 1 {
 		// we only have one column group: flat list of columns
@@ -177,7 +202,7 @@ func (prt *Printer) Prepare(stmt string) (res *Result) {
 				Scale: 1.0,
 			}
 			prt.vars[label] = pv
-			prt.cols[pos+1] = NewPrtCol().Add(label)
+			pj.cols[pos+1] = NewPrtCol().Add(label)
 		}
 	} else {
 		// parse column groups
@@ -192,7 +217,7 @@ func (prt *Printer) Prepare(stmt string) (res *Result) {
 			}
 			// add labels to column
 			column := NewPrtCol()
-			prt.cols[col] = column
+			pj.cols[col] = column
 			for _, label := range strings.Split(grp, ",") {
 				// add variable
 				pv := &PrtVar{
@@ -261,23 +286,31 @@ func (prt *Printer) Add(epoch int) (res *Result) {
 func (prt *Printer) print() (res *Result) {
 	res = Success()
 
-	Msgf("   Generating print...")
-	switch prt.mode {
-	case PRT_DYNAMO:
-		res = prt.print_dyn()
-	case PRT_CSV:
-		res = prt.print_csv()
-	default:
-		res = Failure(ErrPrintMode)
+	Msgf("   Generating print(s)...")
+loop:
+	// handle all print jobs
+	for _, pj := range prt.jobs {
+		switch prt.mode {
+		case PRT_DYNAMO:
+			res = prt.print_dyn(pj)
+		case PRT_CSV:
+			res = prt.print_csv(pj)
+		default:
+			res = Failure(ErrPrintMode)
+			break loop
+		}
 	}
 	return
 }
 
 // Print data in classic DYNAMO style
-func (prt *Printer) print_dyn() (res *Result) {
+func (prt *Printer) print_dyn(pj *PrintJob) (res *Result) {
 	res = Success()
 
 	// print intro
+	fmt.Fprintf(prt.file, "\n\n")
+	fmt.Fprintf(prt.file, "      PRINT %s\n", pj.stmt)
+	fmt.Fprintln(prt.file)
 	if len(prt.mdl.Title) > 0 {
 		fmt.Fprintf(prt.file, "***** %s *****\n", prt.mdl.Title)
 		fmt.Fprintln(prt.file)
@@ -296,7 +329,7 @@ func (prt *Printer) print_dyn() (res *Result) {
 	maxsub := 0
 	for col := 0; col < 20; col++ {
 		list[col] = nil
-		if pc, ok := prt.cols[col]; ok {
+		if pc, ok := pj.cols[col]; ok {
 			list[col] = pc.Vars
 			maxcol = col + 1
 			for _, name := range pc.Vars {
@@ -325,7 +358,7 @@ func (prt *Printer) print_dyn() (res *Result) {
 		if vl == nil {
 			fmt.Fprintf(prt.file, "         ")
 		} else {
-			scale := fmt.Sprintf("%E", prt.cols[col].Scale)
+			scale := fmt.Sprintf("%E", pj.cols[col].Scale)
 			pos := strings.LastIndex(scale, "E")
 			fmt.Fprintf(prt.file, "  %7s", scale[pos:])
 		}
@@ -339,7 +372,7 @@ func (prt *Printer) print_dyn() (res *Result) {
 				if vl == nil || sub >= len(vl) {
 					fmt.Fprintf(prt.file, "         ")
 				} else {
-					val := prt.vars[vl[sub]].Values[x] / prt.cols[col].Scale
+					val := prt.vars[vl[sub]].Values[x] / pj.cols[col].Scale
 					fmt.Fprintf(prt.file, "  %7.3f", val)
 				}
 			}
@@ -350,13 +383,13 @@ func (prt *Printer) print_dyn() (res *Result) {
 }
 
 // Print data into a CSV file
-func (prt *Printer) print_csv() (res *Result) {
+func (prt *Printer) print_csv(pj *PrintJob) (res *Result) {
 	res = Success()
 
 	// get (flat) list of labels
 	var list []string
 	for col := 0; col < 20; col++ {
-		if pc, ok := prt.cols[col]; ok {
+		if pc, ok := pj.cols[col]; ok {
 			for _, name := range pc.Vars {
 				list = append(list, name)
 			}
