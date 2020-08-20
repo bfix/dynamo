@@ -431,11 +431,17 @@ var (
 )
 
 /// FormatNumber  a number in short form with scale
-func FormatNumber(x float64, frmt string) string {
+func FormatNumber(x float64, a, b int) string {
 	i, v := 0, x
 	for math.Abs(v) > 1000 {
 		i++
 		v /= 1000
 	}
+	if i == 0 {
+		frmt := fmt.Sprintf("%%%d.%df", a+b+1, b)
+		return fmt.Sprintf(frmt, v)
+	}
+	fill := "       "
+	frmt := fmt.Sprintf("%%%d.f.%%c%s", a+1, fill[:b-1])
 	return fmt.Sprintf(frmt, v, SCALE[i])
 }
