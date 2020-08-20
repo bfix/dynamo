@@ -70,6 +70,28 @@ func (pg *PlotGroup) Norm(y float64) float64 {
 }
 
 //----------------------------------------------------------------------
+// Plot jobs
+//----------------------------------------------------------------------
+
+// PlotJob is plottig a graph of selected variables
+type PlotJob struct {
+	stmt string       // PLOT statement
+	plt  *Plotter     // plotter instance
+	grps []*PlotGroup // plot ranges
+}
+
+// NewPlotJob creates a new plott job for the plotter based on
+// the PLOT statement.
+func NewPlotJob(stmt string, plt *Plotter) *PlotJob {
+	pj := &PlotJob{
+		stmt: stmt,
+		plt:  plt,
+		grps: make([]*PlotGroup, 0),
+	}
+	return pj
+}
+
+//----------------------------------------------------------------------
 // Plotter
 //----------------------------------------------------------------------
 
@@ -83,13 +105,12 @@ type Plotter struct {
 	file  *os.File            // reference to debug file (or nil if not defined)
 	mode  int                 // plotting mode (PLT_????)
 	mdl   *Model              // back-ref to model instance
-	stmt  string              // PLOT statement
 	steps int                 // number of DT steps between plotting points
 	vars  map[string]*PlotVar // variables to use in graphs
-	grps  []*PlotGroup        // plot ranges
 	x0    float64             // first x position
 	dx    float64             // x-step
 	xnum  int                 // number of x-values
+	jobs  []*PlotJob          // list of plot jobs to perform
 }
 
 // NewPlotter instantiates a new plotter output.
@@ -107,8 +128,8 @@ func NewPlotter(file string, mdl *Model) *Plotter {
 		mdl:  mdl,
 		mode: mode,
 		vars: make(map[string]*PlotVar),
-		grps: make([]*PlotGroup, 0),
 		xnum: 0,
+		jobs: make([]*PlotJob, 0),
 	}
 	if len(file) == 0 {
 		plt.file = nil
@@ -135,13 +156,17 @@ func (plt *Plotter) Close() (res *Result) {
 // Prepare a plot output
 func (plt *Plotter) Prepare(stmt string) (res *Result) {
 	res = Success()
-	var err error
-	plt.stmt = stmt
+
+	// create a new print job
+	pj := NewPlotJob(stmt, plt)
+	plt.jobs = append(plt.jobs, pj)
+
 	// split into groups with same scale first
+	var err error
 	for _, grp := range strings.Split(stmt, "/") {
 		// each group is a PlotGroup instance
 		pg := NewPlotGroup()
-		plt.grps = append(plt.grps, pg)
+		pj.grps = append(pj.grps, pg)
 		// get scale for group
 		if pos := strings.Index(grp, "("); pos != -1 {
 			scale := strings.Split(strings.Trim(grp[pos:], "()"), ",")
@@ -159,7 +184,7 @@ func (plt *Plotter) Prepare(stmt string) (res *Result) {
 		for _, def := range strings.Split(grp, ",") {
 			x := strings.Split(def, "=")
 			if len(x) != 2 {
-				res = Failure(ErrParseSyntax)
+				res = Failure(ErrParseSyntax+": '%s'", def)
 				return
 			}
 			pv := &PlotVar{
@@ -235,7 +260,6 @@ var (
 func (plt *Plotter) plot() (res *Result) {
 	res = Success()
 
-	Msgf("   Generating plot...")
 	// calibrate ranges
 	calib := func(y float64, side int) float64 {
 		yl := math.Log10(math.Abs(y))
@@ -255,42 +279,46 @@ func (plt *Plotter) plot() (res *Result) {
 		}
 		return LOG_FACTOR[yk] * math.Pow10(int(yb))
 	}
-	// get actual range for each plot group (if not defined in PLOT statement)
-	for _, grp := range plt.grps {
-		if grp.ValidRange {
-			continue
-		}
-		for _, name := range grp.Vars {
-			pv, ok := plt.vars[name]
-			if !ok {
-				return Failure(ErrPlotNoVar+": %s", name)
-			}
-			grp.Min = math.Min(grp.Min, pv.Min)
-			grp.Max = math.Max(grp.Max, pv.Max)
-		}
-		grp.ValidRange = true
 
-		// compute plot/segment width (plot.width = 4 * seg.width)
-		w := 4 * calib((grp.Max-grp.Min)/4, 1)
-		ymin := math.Copysign(calib(grp.Min, -1), grp.Min)
-		ymax := math.Copysign(calib(grp.Max, 1), grp.Max)
-		// adjust boundaries to width; use bound with smaller error
-		if grp.Max < ymin+w {
-			grp.Min = ymin
-			grp.Max = ymin + w
-		} else if grp.Min < ymax-w {
-			grp.Max = ymax
-			grp.Min = ymax - w
-		} else {
-			res = Failure(ErrPlotRange)
+	Msgf("   Generating plot(s)...")
+	for _, pj := range plt.jobs {
+		// get actual range for each plot group (if not defined in PLOT statement)
+		for _, grp := range pj.grps {
+			if grp.ValidRange {
+				continue
+			}
+			for _, name := range grp.Vars {
+				pv, ok := plt.vars[name]
+				if !ok {
+					return Failure(ErrPlotNoVar+": %s", name)
+				}
+				grp.Min = math.Min(grp.Min, pv.Min)
+				grp.Max = math.Max(grp.Max, pv.Max)
+			}
+			grp.ValidRange = true
+
+			// compute plot/segment width (plot.width = 4 * seg.width)
+			w := 4 * calib((grp.Max-grp.Min)/4, 1)
+			ymin := math.Copysign(calib(grp.Min, -1), grp.Min)
+			ymax := math.Copysign(calib(grp.Max, 1), grp.Max)
+			// adjust boundaries to width; use bound with smaller error
+			if grp.Max < ymin+w {
+				grp.Min = ymin
+				grp.Max = ymin + w
+			} else if grp.Min < ymax-w {
+				grp.Max = ymax
+				grp.Min = ymax - w
+			} else {
+				res = Failure(ErrPlotRange)
+			}
 		}
-	}
-	// now do the actual plotting
-	switch plt.mode {
-	case PLT_DYNAMO:
-		res = plt.plot_dyn()
-	default:
-		res = Failure(ErrPlotMode)
+		// now do the actual plotting
+		switch plt.mode {
+		case PLT_DYNAMO:
+			res = plt.plot_dyn(pj)
+		default:
+			res = Failure(ErrPlotMode)
+		}
 	}
 	return
 }
@@ -299,7 +327,7 @@ func (plt *Plotter) plot() (res *Result) {
 // Plot routines
 //----------------------------------------------------------------------
 
-func (plt *Plotter) plot_dyn() *Result {
+func (plt *Plotter) plot_dyn(pj *PlotJob) *Result {
 
 	// make horizontal plot line without graph
 	mkLine := func(x float64, i int) string {
@@ -323,12 +351,13 @@ func (plt *Plotter) plot_dyn() *Result {
 	}
 
 	// emit plot header
+	fmt.Fprintf(plt.file, "\n\n")
 	fmt.Fprintf(plt.file, "Plot for '%s'\n", plt.mdl.RunID)
-	fmt.Fprintf(plt.file, "         %s\n", plt.stmt)
+	fmt.Fprintf(plt.file, "         %s\n", pj.stmt)
 	fmt.Fprintln(plt.file)
 
 	// emit plot y-axis (multiple scales; one per plot group)
-	for _, grp := range plt.grps {
+	for _, grp := range pj.grps {
 		s := ""
 		for _, v := range grp.Vars {
 			pv := plt.vars[v]
@@ -348,7 +377,7 @@ func (plt *Plotter) plot_dyn() *Result {
 	// draw graph
 	for x, i := plt.x0, 0; i < plt.xnum; x, i = x+plt.dx, i+1 {
 		line := []rune(mkLine(x, i))
-		for _, grp := range plt.grps {
+		for _, grp := range pj.grps {
 			for _, v := range grp.Vars {
 				pv := plt.vars[v]
 				pos := int(math.Round(100*grp.Norm(pv.Values[i]))) + 11
