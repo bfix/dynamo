@@ -220,6 +220,8 @@ func (mdl *Model) AddStatement(stmt *Line) (res *Result) {
 	case "SPEC":
 		//--------------------------------------------------------------
 		// Runtime/simulation parameters
+		// This is an optional statement; the same effect can be achieved
+		// by defining "C" equations for the parameters.
 		if res = prepLine(); !res.Ok {
 			break
 		}
