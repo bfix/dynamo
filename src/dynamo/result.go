@@ -28,10 +28,12 @@ import (
 // DYNAMO error messages
 const (
 	ErrModelDependencyLoop    = "Equations have cyclic dependencies"
+	ErrModelEqnBadTargetKind  = "Wrong kind of equation target"
 	ErrModelEqnBadTargetStage = "Wrong stage for equation target"
+	ErrModelEqnBadDependClass = "Wrong class (kind/stage) of equation dependency"
 	ErrModelEqnBadMode        = "Wrong mode for equation"
 	ErrModelEqnOverwrite      = "Equation overwrite"
-	ErrModelEqnBadTargetKind  = "Wrong kind for equation target"
+	ErrModelEqnAmbigious      = "Ambigious equation"
 	ErrModelUnknownEqn        = "No defining equation for variable found"
 	ErrModelUnknownFunction   = "Unknown function call"
 	ErrModelFunctionArg       = "Invalid function argument"

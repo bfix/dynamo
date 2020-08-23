@@ -113,9 +113,33 @@ func NewEquation(stmt *Line) (eqns []*Equation, res *Result) {
 		if eqn.Target, res = NewName(x.X); !res.Ok {
 			return
 		}
-		if stmt.Mode == "N" {
+		switch stmt.Mode {
+		case "N":
+			if eqn.Target.Kind != NAME_KIND_CONST {
+				res = Failure(ErrModelEqnBadTargetKind)
+				return
+			}
 			eqn.Target.Kind = NAME_KIND_INIT
-			eqn.Target.Stage = NAME_STAGE_NONE
+		case "A":
+			if eqn.Target.Kind != NAME_KIND_LEVEL {
+				res = Failure(ErrModelEqnBadTargetKind)
+				return
+			}
+			eqn.Target.Kind = NAME_KIND_AUX
+			if eqn.Target.Stage != NAME_STAGE_NEW {
+				res = Failure(ErrModelEqnBadTargetStage)
+				return
+			}
+		case "S":
+			if eqn.Target.Kind != NAME_KIND_LEVEL {
+				res = Failure(ErrModelEqnBadTargetKind)
+				return
+			}
+			eqn.Target.Kind = NAME_KIND_SUPPL
+			if eqn.Target.Stage != NAME_STAGE_NEW {
+				res = Failure(ErrModelEqnBadTargetStage)
+				return
+			}
 		}
 
 		// Handle RIGHT side of equation recursively
@@ -187,6 +211,99 @@ func NewEquation(stmt *Line) (eqns []*Equation, res *Result) {
 // String returns a human-readable equation formula.
 func (eqn *Equation) String() string {
 	return "'" + eqn.Mode + ":" + eqn.stmt + "'"
+}
+
+// Validate checks the equation for correctness.
+func (eqn *Equation) Validate(list map[string]*Equation) (res *Result) {
+
+	// check equation target and dependencies.
+	check := func(target *Class, deps []*Class) *Result {
+		if eqn.Target.Kind != target.Kind {
+			return Failure(ErrModelEqnBadTargetKind)
+		}
+		if eqn.Target.Stage != target.Stage {
+			return Failure(ErrModelEqnBadTargetStage)
+		}
+		if list != nil {
+			for _, d := range eqn.Dependencies {
+				found := false
+				ref, ok := list[d.Name]
+				if !ok {
+					return Failure(ErrModelUnknownEqn)
+				}
+				for _, cl := range deps {
+					if ref.Target.Kind == cl.Kind {
+						if d.Stage == cl.Stage {
+							found = true
+							break
+						}
+					}
+				}
+				if !found {
+					return Failure(ErrModelEqnBadDependClass+": %s", d.Name)
+				}
+			}
+		}
+		return Success()
+	}
+	// preform validation
+	switch eqn.Mode {
+	case "C":
+		// Constant eqn.
+		res = check(
+			&Class{NAME_KIND_CONST, NAME_STAGE_NONE},
+			[]*Class{
+				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // other constants
+			})
+	case "N":
+		// Initializer eqn.
+		res = check(
+			&Class{NAME_KIND_INIT, NAME_STAGE_NEW},
+			[]*Class{
+				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
+				&Class{NAME_KIND_INIT, NAME_STAGE_NEW},   // other initializers
+			})
+	case "L":
+		// Constant eqn.
+		res = check(
+			&Class{NAME_KIND_LEVEL, NAME_STAGE_NEW},
+			[]*Class{
+				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
+				&Class{NAME_KIND_LEVEL, NAME_STAGE_NEW},  // other levels
+				&Class{NAME_KIND_RATE, NAME_STAGE_OLD},   // rates
+			})
+	case "R":
+		// Rate eqn.
+		res = check(
+			&Class{NAME_KIND_RATE, NAME_STAGE_NEW},
+			[]*Class{
+				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
+				&Class{NAME_KIND_LEVEL, NAME_STAGE_NEW},  // levels
+				&Class{NAME_KIND_AUX, NAME_STAGE_NEW},    // aux
+				&Class{NAME_KIND_RATE, NAME_STAGE_OLD},   // other rates
+			})
+	case "A":
+		// Auxilliary eqn.
+		res = check(
+			&Class{NAME_KIND_AUX, NAME_STAGE_NEW},
+			[]*Class{
+				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
+				&Class{NAME_KIND_AUX, NAME_STAGE_NEW},    // other auxilieries
+				&Class{NAME_KIND_LEVEL, NAME_STAGE_NEW},  // levels
+				&Class{NAME_KIND_RATE, NAME_STAGE_NEW},   // rates
+			})
+	case "S":
+		// Supplementary eqn.
+		res = check(
+			&Class{NAME_KIND_CONST, NAME_STAGE_NONE},
+			[]*Class{
+				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
+				&Class{NAME_KIND_AUX, NAME_STAGE_NEW},    // auxilieries
+				&Class{NAME_KIND_LEVEL, NAME_STAGE_NEW},  // levels
+				&Class{NAME_KIND_RATE, NAME_STAGE_NEW},   // rates
+			})
+	}
+	return
 }
 
 // DependsOn returns true if a variable is referenced in the formula.

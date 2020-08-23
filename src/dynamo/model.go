@@ -117,6 +117,7 @@ func (mdl *Model) Dump() {
 	Msgf("       LEVEL equations: %4d\n", cnt["L"])
 	Msgf("        RATE equations: %4d\n", cnt["R"])
 	Msgf("         AUX equations: %4d\n", cnt["A"])
+	Msgf("       SUPPL equations: %4d\n", cnt["S"])
 	Msgf("       CONST equations: %4d\n", cnt["C"])
 	Msgf("        INIT equations: %4d\n", cnt["N"])
 	Msg("-----------------------------------")
@@ -169,7 +170,7 @@ func (mdl *Model) AddStatement(stmt *Line) (res *Result) {
 		//--------------------------------------------------------------
 		// skip over comments
 
-	case "L", "R", "C", "N", "A":
+	case "L", "R", "C", "N", "A", "S":
 		//--------------------------------------------------------------
 		// Level and rate equations
 		var eqns []*Equation
@@ -178,20 +179,12 @@ func (mdl *Model) AddStatement(stmt *Line) (res *Result) {
 		}
 	loop:
 		for _, eqn := range eqns {
-			// check if equation has correct temporality
-			if eqn.Target.Stage != NAME_STAGE_NEW && strings.Contains("LRA", eqn.Mode) {
-				res = Failure(ErrModelEqnBadTargetStage)
+			// check if equation has correct temporality and kind
+			// (don't check dependencies at this stage)
+			if res = eqn.Validate(nil); !res.Ok {
 				break
 			}
-			// check for matching equation mode and target kind
-			if (strings.Index("LA", eqn.Mode) != -1 && eqn.Target.Kind != NAME_KIND_LEVEL) ||
-				(eqn.Mode == "N" && eqn.Target.Kind != NAME_KIND_INIT) ||
-				(eqn.Mode == "R" && eqn.Target.Kind != NAME_KIND_RATE) ||
-				(eqn.Mode == "C" && eqn.Target.Kind != NAME_KIND_CONST) {
-				res = Failure(ErrModelEqnBadTargetKind)
-				break
-			}
-			// check if equation is not defined yet.
+			// check if equation is already defined.
 			for _, e := range mdl.Eqns {
 				if e.Target.Compare(eqn.Target) == NAME_MATCH {
 					res = Failure(ErrModelEqnOverwrite)
@@ -481,6 +474,29 @@ func (mdl *Model) Set(name *Name, val Variable) (res *Result) {
 	mdl.Current[name.Name] = val
 	Dbg.Msgf(">    %s = %f\n", name, val)
 	return
+}
+
+//----------------------------------------------------------------------
+// Validate equations in model
+//----------------------------------------------------------------------
+
+func (mdl *Model) Validate() *Result {
+	// build list of variable equations
+	list := make(map[string]*Equation)
+	for _, eqn := range mdl.Eqns {
+		if _, ok := list[eqn.Target.Name]; ok {
+			return Failure(ErrModelEqnAmbigious)
+		}
+		list[eqn.Target.Name] = eqn
+	}
+	// check all equations
+	for _, eqn := range mdl.Eqns {
+		// check if equation has correct dependencies
+		if res := eqn.Validate(list); !res.Ok {
+			return res
+		}
+	}
+	return Success()
 }
 
 //----------------------------------------------------------------------

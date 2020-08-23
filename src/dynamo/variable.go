@@ -54,6 +54,8 @@ const (
 	NAME_KIND_INIT  = 1
 	NAME_KIND_LEVEL = 2
 	NAME_KIND_RATE  = 3
+	NAME_KIND_AUX   = 4
+	NAME_KIND_SUPPL = 5
 
 	// Stage of variable
 	NAME_STAGE_NONE = 0 // only constants can have this stage
@@ -78,11 +80,16 @@ func NewAutoVar() string {
 	return fmt.Sprintf("_%d", autoId)
 }
 
+// Class is a classification for variables
+type Class struct {
+	Kind  int // NAME_KIND_?
+	Stage int // NAME_STAGE_?
+}
+
 // Name of a state variable
 type Name struct {
-	Name  string // Name of the variable
-	Kind  int    // NAME_KIND_?
-	Stage int    // NAME_STAGE_?
+	Class
+	Name string // Name of the variable
 }
 
 // NewName returns a name instance for a given identifier.

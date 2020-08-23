@@ -121,7 +121,10 @@ func (mdl *Model) Parse(rdr io.Reader) (res *Result) {
 	// perform parsing
 	if res = process(); res.Ok {
 		// sort equations "topologically" after parsing
-		res = mdl.SortEquations().SetLine(res.Line)
+		if res = mdl.SortEquations().SetLine(res.Line); res.Ok {
+			// perform equation validation
+			res = mdl.Validate()
+		}
 	}
 	return
 }
