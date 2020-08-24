@@ -181,7 +181,7 @@ func (mdl *Model) AddStatement(stmt *Line) (res *Result) {
 		for _, eqn := range eqns {
 			// check if equation has correct temporality and kind
 			// (don't check dependencies at this stage)
-			if res = eqn.Validate(nil); !res.Ok {
+			if res = mdl.validateEqn(eqn, nil); !res.Ok {
 				break
 			}
 			// check if equation is already defined.
@@ -315,17 +315,14 @@ func (mdl *Model) SortEquations() (res *Result) {
 		res = Success()
 		for _, entry := range list {
 			eqn := mdl.Eqns[entry.pos]
-		loop:
 			for _, d := range eqn.Dependencies {
 				// skip system variables
-				if strings.Index("TIME,DT,", d.Name+",") != -1 {
+				if mdl.IsSystem(d.Name) {
 					continue
 				}
-				// skip table names
-				for tbl, _ := range mdl.Tables {
-					if d.Name == tbl {
-						continue loop
-					}
+				// check if dependency is refering to previous stage
+				if d.Stage == NAME_STAGE_OLD || !eqn.ForcedDeps {
+					continue
 				}
 				// get defining equation for dependency
 				x, ok := list[d.Name]
@@ -379,7 +376,7 @@ func (mdl *Model) SortEquations() (res *Result) {
 			Msg("Cyclic dependencies detected:")
 			for _, e := range graph {
 				eqn := mdl.Eqns[e.pos]
-				Msg(">> " + eqn.String())
+				Msgf(">> [%d] %s {%v}\n", e.pos, eqn.String(), e.deps)
 			}
 			res = Failure(ErrModelDependencyLoop)
 		} else {
@@ -400,12 +397,12 @@ func (mdl *Model) SortEquations() (res *Result) {
 	for i, eqn := range mdl.Eqns {
 		name := eqn.Target.Name
 		Dbg.Msgf("SortEquations << [%d] %s\n", i, eqn.String())
-		if strings.Index("CNRA", eqn.Mode) != -1 {
+		if strings.Index("CNA", eqn.Mode) != -1 {
 			if _, ok := eqnInit[name]; ok {
 				return Failure(ErrModelVariabeExists+": %s", name)
 			}
 			eqnInit[name] = newEntry(i, name)
-		} else if strings.Index("L", eqn.Mode) != -1 {
+		} else if strings.Index("RL", eqn.Mode) != -1 {
 			if _, ok := eqnRun[name]; ok {
 				return Failure(ErrModelVariabeExists+": %s", name)
 			}
@@ -448,7 +445,7 @@ func (mdl *Model) SortEquations() (res *Result) {
 func (mdl *Model) Get(name *Name) (val Variable, res *Result) {
 	res = Success()
 	defer func() {
-		Dbg.Msgf("Get('%s',%d,%d) = %f\n", name.Name, name.Kind, name.Stage, val)
+		Dbg.Msgf("<   %s = %f (%d)\n", name, val, name.Stage)
 	}()
 
 	var ok bool
@@ -462,7 +459,7 @@ func (mdl *Model) Get(name *Name) (val Variable, res *Result) {
 			return
 		}
 	}
-	res = Failure(ErrModelNoVariable+": '%s'", name.Name)
+	res = Failure(ErrModelNoVariable+": '%s'", name.String())
 	return
 }
 
@@ -472,8 +469,22 @@ func (mdl *Model) Get(name *Name) (val Variable, res *Result) {
 func (mdl *Model) Set(name *Name, val Variable) (res *Result) {
 	res = Success()
 	mdl.Current[name.Name] = val
-	Dbg.Msgf(">    %s = %f\n", name, val)
+	Dbg.Msgf(">   %s = %f (%d)\n", name, val, name.Stage)
 	return
+}
+
+func (mdl *Model) IsSystem(name string) bool {
+	// check for pre-defined variables
+	if strings.Index("TIME,DT,LENGTH,PLTPER,PRTPER,", name+",") != -1 {
+		return true
+	}
+	// skip table names
+	for tbl, _ := range mdl.Tables {
+		if name == tbl {
+			return true
+		}
+	}
+	return false
 }
 
 //----------------------------------------------------------------------
@@ -484,19 +495,144 @@ func (mdl *Model) Validate() *Result {
 	// build list of variable equations
 	list := make(map[string]*Equation)
 	for _, eqn := range mdl.Eqns {
-		if _, ok := list[eqn.Target.Name]; ok {
+		name := eqn.Target.String()
+		if _, ok := list[name]; ok {
 			return Failure(ErrModelEqnAmbigious)
 		}
-		list[eqn.Target.Name] = eqn
+		list[name] = eqn
 	}
 	// check all equations
 	for _, eqn := range mdl.Eqns {
 		// check if equation has correct dependencies
-		if res := eqn.Validate(list); !res.Ok {
+		if res := mdl.validateEqn(eqn, list); !res.Ok {
+			Dbg.Msgf("*** %s\n", eqn.String())
 			return res
 		}
 	}
 	return Success()
+}
+
+// Validate checks the equation for correctness.
+func (mdl *Model) validateEqn(eqn *Equation, list map[string]*Equation) (res *Result) {
+
+	// check equation target and dependencies.
+	check := func(target *Class, deps []*Class) *Result {
+		if eqn.Target.Kind != target.Kind {
+			return Failure(ErrModelEqnBadTargetKind+": %d", eqn.Target.Kind)
+		}
+		if eqn.Target.Stage != target.Stage {
+			return Failure(ErrModelEqnBadTargetStage+": %d", eqn.Target.Stage)
+		}
+		if list != nil {
+			for _, d := range eqn.Dependencies {
+				if mdl.IsSystem(d.Name) {
+					continue
+				}
+				found := false
+				name := d.String()
+				ref, ok := list[name]
+				if !ok {
+					// if the missing equation is for a constant, check if we
+					// have a matching initializer. If it is for a level, look
+					// for a matching auxilliary.
+					if strings.HasSuffix(name, "/C") {
+						name = d.Name + "/I"
+						ref, ok = list[name]
+					} else if strings.HasSuffix(name, "/L") {
+						name = d.Name + "/A"
+						ref, ok = list[name]
+					}
+					if !ok {
+						Dbg.Msgf("[1]*** %v\n", eqn)
+						Dbg.Msgf("[2]*** %v\n", list)
+						return Failure(ErrModelUnknownEqn+": %s", name)
+					}
+				}
+				for _, cl := range deps {
+					if ref.Target.Kind == cl.Kind {
+						if d.Stage == cl.Stage {
+							found = true
+							break
+						}
+					}
+				}
+				if !found {
+					Msgf("[A]*** %v -- %s\n", eqn, eqn.Target.String())
+					Msgf("[B]*** %v  -- %s\n", ref, ref.Target.String())
+					return Failure(ErrModelEqnBadDependClass+": %s", d.String())
+				}
+			}
+		}
+		return Success()
+	}
+	// perform validation
+	switch eqn.Mode {
+	case "C":
+		// Constant eqn.
+		res = check(
+			&Class{NAME_KIND_CONST, NAME_STAGE_NONE},
+			[]*Class{
+				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // other constants
+			})
+	case "N":
+		// Initializer eqn.
+		res = check(
+			&Class{NAME_KIND_INIT, NAME_STAGE_NONE},
+			[]*Class{
+				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
+				&Class{NAME_KIND_INIT, NAME_STAGE_NONE},  // other initializers
+			})
+		if !res.Ok {
+			Msgf("   WARN: %s\n", res.Err.Error())
+			res = Success()
+		}
+	case "L":
+		// Constant eqn.
+		res = check(
+			&Class{NAME_KIND_LEVEL, NAME_STAGE_NEW},
+			[]*Class{
+				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
+				&Class{NAME_KIND_LEVEL, NAME_STAGE_NEW},  // currnt levels
+				&Class{NAME_KIND_LEVEL, NAME_STAGE_OLD},  // old levels
+				&Class{NAME_KIND_RATE, NAME_STAGE_OLD},   // rates
+			})
+	case "R":
+		// Rate eqn.
+		res = check(
+			&Class{NAME_KIND_RATE, NAME_STAGE_NEW},
+			[]*Class{
+				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
+				&Class{NAME_KIND_LEVEL, NAME_STAGE_NEW},  // levels
+				&Class{NAME_KIND_AUX, NAME_STAGE_NEW},    // aux
+				&Class{NAME_KIND_RATE, NAME_STAGE_OLD},   // other rates
+			})
+		if !res.Ok {
+			Msgf("   WARN: %s\n", res.Err.Error())
+			res = Success()
+		}
+	case "A":
+		// Auxilliary eqn.
+		res = check(
+			&Class{NAME_KIND_AUX, NAME_STAGE_NEW},
+			[]*Class{
+				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
+				&Class{NAME_KIND_INIT, NAME_STAGE_NONE},  // initializers
+				&Class{NAME_KIND_AUX, NAME_STAGE_NEW},    // other auxilieries
+				&Class{NAME_KIND_LEVEL, NAME_STAGE_NEW},  // levels
+				&Class{NAME_KIND_RATE, NAME_STAGE_NEW},   // rates
+			})
+	case "S":
+		// Supplementary eqn.
+		res = check(
+			&Class{NAME_KIND_CONST, NAME_STAGE_NONE},
+			[]*Class{
+				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
+				&Class{NAME_KIND_AUX, NAME_STAGE_NEW},    // auxilieries
+				&Class{NAME_KIND_LEVEL, NAME_STAGE_NEW},  // levels
+				&Class{NAME_KIND_RATE, NAME_STAGE_NEW},   // rates
+			})
+	}
+	return
 }
 
 //----------------------------------------------------------------------
@@ -508,9 +644,9 @@ func (mdl *Model) Run() (res *Result) {
 	res = Success()
 
 	// compute all equations with specified mode
-	compute := func(modes string) (res *Result) {
+	compute := func(modes string, eqns []*Equation) (res *Result) {
 		res = Success()
-		for _, eqn := range mdl.Eqns {
+		for _, eqn := range eqns {
 			if strings.Contains(modes, eqn.Mode) {
 				if res = eqn.Eval(mdl); !res.Ok {
 					Dbg.Msg(eqn.String())
@@ -520,10 +656,40 @@ func (mdl *Model) Run() (res *Result) {
 		}
 		return
 	}
+
+	// compute split in equation list between "init" and "run"
+	split := 0
+	for i, eqn := range mdl.Eqns {
+		if strings.Contains("CN", eqn.Mode) {
+			split = i + 1
+		}
+	}
+	if mdl.Verbose {
+		Msgf("   INFO: Splitting equations: INIT=[1..%d], RUN=[%d..%d]\n", split, split+1, len(mdl.Eqns))
+	}
+	initEqns := mdl.Eqns[:split]
+	runEqns := mdl.Eqns[split:]
+
+	//------------------------------------------------------------------
 	// Initialize state:
+	//------------------------------------------------------------------
 	Msg("   Initializing state...")
-	mdl.Current["TIME"] = 0
-	if res = compute("CNRA"); !res.Ok {
+
+	// set predefined (system) variables if not defined
+	setDef := func(name string, val Variable) {
+		if _, ok := mdl.Current[name]; !ok {
+			Msgf("      INFO: Setting '%s' to %f\n", name, val)
+			mdl.Current[name] = val
+		}
+	}
+	setDef("TIME", 0)
+	setDef("DT", 0.1)
+	setDef("LENGTH", 10)
+	setDef("PRTPER", 0)
+	setDef("PLTPER", 0)
+
+	// initialize from equations
+	if res = compute("CNRA", initEqns); !res.Ok {
 		return
 	}
 	// keep a list of a variables (level,rate)
@@ -535,6 +701,9 @@ func (mdl *Model) Run() (res *Result) {
 	used := make(map[string]bool)
 	ok := true
 	for level, _ := range mdl.Current {
+		if level[0] == '_' {
+			continue
+		}
 		check[level] = false
 		varList = append(varList, level)
 	}
@@ -555,7 +724,7 @@ func (mdl *Model) Run() (res *Result) {
 		}
 	}
 	for level, val := range check {
-		if strings.Index("TIME;DT;LENGTH;PRTPER;PLTPER;", level+";") != -1 {
+		if mdl.IsSystem(level) {
 			continue
 		}
 		if !val {
@@ -601,7 +770,7 @@ func (mdl *Model) Run() (res *Result) {
 			Msgf("      Epoch %d:\n", epoch)
 			Msg("         Evaluating AUX + RATE equations:")
 		}
-		if res = compute("AR"); !res.Ok {
+		if res = compute("AR", runEqns); !res.Ok {
 			break
 		}
 		// emit current values for plot and print
@@ -621,7 +790,7 @@ func (mdl *Model) Run() (res *Result) {
 		if mdl.Verbose {
 			Msg("         Evaluating LEVEL equations:")
 		}
-		if res = compute("L"); !res.Ok {
+		if res = compute("L", runEqns); !res.Ok {
 			break
 		}
 		Dbg.Msgf("[%d] %v\n", epoch, mdl.Current)

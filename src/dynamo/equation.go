@@ -40,6 +40,7 @@ import (
 type Equation struct {
 	Target       *Name    // Name of (indexed) variable (left side of equation)
 	Dependencies []*Name  // List of (indexed) variables from right side.
+	ForcedDeps   bool     // Force use of dependencies even if stage is not NEW
 	Mode         string   // Mode of equation as given in the source
 	Formula      ast.Expr // formula in Go AST
 	stmt         string   // complete equation in DYNAMO notation
@@ -106,6 +107,7 @@ func NewEquation(stmt *Line) (eqns []*Equation, res *Result) {
 			stmt:         stmt.Stmt,
 			Mode:         stmt.Mode,
 			Dependencies: make([]*Name, 0),
+			ForcedDeps:   false,
 		}
 		eqn.Formula = x.Y
 
@@ -143,8 +145,8 @@ func NewEquation(stmt *Line) (eqns []*Equation, res *Result) {
 		}
 
 		// Handle RIGHT side of equation recursively
-		var check func(ast.Expr, int) *Result
-		check = func(f ast.Expr, depth int) (res *Result) {
+		var check func(ast.Expr) *Result
+		check = func(f ast.Expr) (res *Result) {
 			res = Success()
 			switch x := f.(type) {
 			case *ast.Ident, *ast.SelectorExpr:
@@ -156,48 +158,46 @@ func NewEquation(stmt *Line) (eqns []*Equation, res *Result) {
 					eqn.Dependencies = append(eqn.Dependencies, name)
 				}
 			case *ast.BinaryExpr:
-				if res = check(x.X, depth+1); res.Ok {
-					res = check(x.Y, depth+1)
+				if res = check(x.X); res.Ok {
+					res = check(x.Y)
 				}
 			case *ast.ParenExpr:
-				res = check(x.X, depth+1)
+				res = check(x.X)
 			case *ast.BasicLit:
 				// skipped intentionally
 			case *ast.UnaryExpr:
-				res = check(x.X, depth+1)
+				res = check(x.X)
 			case *ast.CallExpr:
+				// get function name
 				var name *Name
 				if name, res = NewName(x.Fun); !res.Ok {
 					break
 				}
+				// check for function availibility
 				Dbg.Msgf("Calling '%s'\n", name.Name)
-				if eqns, res = HasFunction(eqn.Target, name.Name, x.Args, depth); !res.Ok {
+				var intern []ast.Expr
+				if intern, res = HasFunction(eqn.Target, name.Name, x.Args); !res.Ok {
 					break
 				}
-				Dbg.Msgf("Macro: %v\n", eqns)
-				if len(eqns) == 0 {
-					// check function arguments
-					for _, arg := range x.Args {
-						if res = check(arg, depth+1); !res.Ok {
-							break
-						}
+				// check function arguments
+				for _, arg := range x.Args {
+					if res = check(arg); !res.Ok {
+						break
 					}
 				}
-				// every function has a level variable (result of the function
-				// evaluation) that is optional; a function may decide to not
-				// store the level.
-				lvl := &ast.BasicLit{
-					Value: NewAutoVar(),
-				}
-				x.Args = append(x.Args, lvl)
+				// add internal variable
+				x.Args = append(x.Args, intern...)
+				// function enforces timeless dependencies
+				eqn.ForcedDeps = true
+
 			default:
 				res = Failure(ErrParseSyntax+": %v\n", reflect.TypeOf(x))
 			}
 			return
 		}
 
-		res = check(x.Y, 0)
-		if len(eqns) == 0 {
+		res = check(x.Y)
+		if res.Ok {
 			eqns = append(eqns, eqn)
 		}
 		return
@@ -211,99 +211,6 @@ func NewEquation(stmt *Line) (eqns []*Equation, res *Result) {
 // String returns a human-readable equation formula.
 func (eqn *Equation) String() string {
 	return "'" + eqn.Mode + ":" + eqn.stmt + "'"
-}
-
-// Validate checks the equation for correctness.
-func (eqn *Equation) Validate(list map[string]*Equation) (res *Result) {
-
-	// check equation target and dependencies.
-	check := func(target *Class, deps []*Class) *Result {
-		if eqn.Target.Kind != target.Kind {
-			return Failure(ErrModelEqnBadTargetKind)
-		}
-		if eqn.Target.Stage != target.Stage {
-			return Failure(ErrModelEqnBadTargetStage)
-		}
-		if list != nil {
-			for _, d := range eqn.Dependencies {
-				found := false
-				ref, ok := list[d.Name]
-				if !ok {
-					return Failure(ErrModelUnknownEqn)
-				}
-				for _, cl := range deps {
-					if ref.Target.Kind == cl.Kind {
-						if d.Stage == cl.Stage {
-							found = true
-							break
-						}
-					}
-				}
-				if !found {
-					return Failure(ErrModelEqnBadDependClass+": %s", d.Name)
-				}
-			}
-		}
-		return Success()
-	}
-	// preform validation
-	switch eqn.Mode {
-	case "C":
-		// Constant eqn.
-		res = check(
-			&Class{NAME_KIND_CONST, NAME_STAGE_NONE},
-			[]*Class{
-				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // other constants
-			})
-	case "N":
-		// Initializer eqn.
-		res = check(
-			&Class{NAME_KIND_INIT, NAME_STAGE_NEW},
-			[]*Class{
-				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
-				&Class{NAME_KIND_INIT, NAME_STAGE_NEW},   // other initializers
-			})
-	case "L":
-		// Constant eqn.
-		res = check(
-			&Class{NAME_KIND_LEVEL, NAME_STAGE_NEW},
-			[]*Class{
-				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
-				&Class{NAME_KIND_LEVEL, NAME_STAGE_NEW},  // other levels
-				&Class{NAME_KIND_RATE, NAME_STAGE_OLD},   // rates
-			})
-	case "R":
-		// Rate eqn.
-		res = check(
-			&Class{NAME_KIND_RATE, NAME_STAGE_NEW},
-			[]*Class{
-				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
-				&Class{NAME_KIND_LEVEL, NAME_STAGE_NEW},  // levels
-				&Class{NAME_KIND_AUX, NAME_STAGE_NEW},    // aux
-				&Class{NAME_KIND_RATE, NAME_STAGE_OLD},   // other rates
-			})
-	case "A":
-		// Auxilliary eqn.
-		res = check(
-			&Class{NAME_KIND_AUX, NAME_STAGE_NEW},
-			[]*Class{
-				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
-				&Class{NAME_KIND_AUX, NAME_STAGE_NEW},    // other auxilieries
-				&Class{NAME_KIND_LEVEL, NAME_STAGE_NEW},  // levels
-				&Class{NAME_KIND_RATE, NAME_STAGE_NEW},   // rates
-			})
-	case "S":
-		// Supplementary eqn.
-		res = check(
-			&Class{NAME_KIND_CONST, NAME_STAGE_NONE},
-			[]*Class{
-				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
-				&Class{NAME_KIND_AUX, NAME_STAGE_NEW},    // auxilieries
-				&Class{NAME_KIND_LEVEL, NAME_STAGE_NEW},  // levels
-				&Class{NAME_KIND_RATE, NAME_STAGE_NEW},   // rates
-			})
-	}
-	return
 }
 
 // DependsOn returns true if a variable is referenced in the formula.
@@ -391,7 +298,7 @@ func eval(expr ast.Expr, mdl *Model) (val Variable, res *Result) {
 				}
 				name := n.Name
 				if idx := n.GetIndex(); len(idx) > 0 {
-					name += "." + idx
+					name += idx
 				}
 				args[i] = name
 			case *ast.BasicLit:

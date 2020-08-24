@@ -45,6 +45,7 @@ const (
 	ErrModelMaxRetry          = "Retry limit reached"
 	ErrModelMissingDef        = "Missing definition of value"
 	ErrModelNoData            = "No data available"
+	ErrModelFunction          = "Error in function"
 
 	ErrParseLineLength      = "Line too long"
 	ErrParseInvalidSpace    = "Space in equation"

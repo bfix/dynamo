@@ -23,6 +23,7 @@ package dynamo
 import (
 	"fmt"
 	"go/ast"
+	"math"
 	"reflect"
 	"strings"
 	"unicode"
@@ -120,6 +121,7 @@ func NewName(v ast.Expr) (name *Name, res *Result) {
 		res = name.setIndex(x.Sel.Name)
 	default:
 		res = Failure(ErrParseInvalidName+": %s", reflect.TypeOf(v))
+		panic("")
 	}
 	return
 }
@@ -167,17 +169,17 @@ func (n *Name) setIndex(idx string) (res *Result) {
 func (n *Name) GetIndex() string {
 	if n.Stage == NAME_STAGE_OLD {
 		if n.Kind == NAME_KIND_LEVEL {
-			return "J"
+			return ".J"
 		}
 		if n.Kind == NAME_KIND_RATE {
-			return "JK"
+			return ".JK"
 		}
 	} else if n.Stage == NAME_STAGE_NEW {
 		if n.Kind == NAME_KIND_LEVEL {
-			return "K"
+			return ".K"
 		}
 		if n.Kind == NAME_KIND_RATE {
-			return "KL"
+			return ".KL"
 		}
 	}
 	return ""
@@ -191,6 +193,10 @@ func (n *Name) String() (name string) {
 		name += "/C"
 	case NAME_KIND_INIT:
 		name += "/I"
+	case NAME_KIND_AUX:
+		name += "/A"
+	case NAME_KIND_SUPPL:
+		name += "/S"
 	case NAME_KIND_LEVEL:
 		name += "/L"
 	case NAME_KIND_RATE:
@@ -224,6 +230,39 @@ type Variable float64
 // String returns the human-readable representation of a variable
 func (v Variable) String() string {
 	return fmt.Sprintf("%f", v)
+}
+
+//----------------------------------------------------------------------
+// MATH methods on variables
+//----------------------------------------------------------------------
+
+// Sqrt: return the sqare root
+func (v Variable) Sqrt() Variable {
+	return Variable(math.Sqrt(float64(v)))
+}
+
+func (v Variable) Sin() Variable {
+	return Variable(math.Sin(float64(v)))
+}
+
+func (v Variable) Cos() Variable {
+	return Variable(math.Cos(float64(v)))
+}
+
+func (v Variable) Exp() Variable {
+	return Variable(math.Exp(float64(v)))
+}
+
+func (v Variable) Log() Variable {
+	return Variable(math.Log(float64(v)))
+}
+
+func (v Variable) Floor() Variable {
+	return Variable(math.Floor(float64(v)))
+}
+
+func (v Variable) Compare(x Variable) int {
+	return compare(float64(v), float64(x))
 }
 
 //----------------------------------------------------------------------

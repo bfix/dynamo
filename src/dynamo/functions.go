@@ -21,43 +21,29 @@ package dynamo
 //----------------------------------------------------------------------
 
 import (
-	"fmt"
 	"go/ast"
-	"log"
 	"math"
 	"math/rand"
-	"regexp"
 	"strconv"
-	"strings"
 )
 
-// Function represents a callable entity in the Dynamo framework. The call
-// takes a list of (stringed) arguments and returns a numerical result (as
-// well as an status result). The number of arguments is usually fixed per
-// function type.
-// Macro functions like DELAY? are also supported; Macro functions are
-// not evaluated, but act as "templates" to expand into a set of normal
-// equations, e.g.
-//     R   @1.KL=DELAY1(@2.JK,@3)
-// is expanded into three equations:
-//     L   $1.K=$1.J+DT*(@2.JK-@1.JK)
-//     N   $1=@2*@3
-//     R   @1.KL=$1.K/@3
-// $1 is a generated (automatic) variable; @<n> is the n.th name as it appears
-// in the original expression. Macro functions can be defined recursively.
-//
+// Function represents a callable entity in the Dynamo framework.
+// A function takes a list of arguments and returns a numerical result (as well
+// as an status result). The list of arguments is build from the list of
+// explicit arguments (as given in the equation statement) and instance
+// arguments (as requested by the function). Instance arguments are stateful;
+// they refer to automatic variables.
 type Function struct {
-	NumArgs int
-	Fcn     func(args []string, mdl *Model) (Variable, *Result)
-	Macro   []*Line
+	NumArgs int // number of expected (explicit) arguments
+	NumVars int // number of requested internal variables
+
+	Check func(args []ast.Expr) *Result                       // argument check function
+	Eval  func(args []string, mdl *Model) (Variable, *Result) // evalutae function
 }
 
 var (
 	// fcnList is a collection of available functions
 	fcnList map[string]*Function
-
-	// regular expression to scan for variables in macros
-	tvar *regexp.Regexp
 )
 
 // Initialize list of defined functions
@@ -69,105 +55,109 @@ func init() {
 		//--------------------------------------------------------------
 		"SQRT": &Function{
 			NumArgs: 1,
-			Fcn: func(args []string, mdl *Model) (val Variable, res *Result) {
-				var x float64
-				if x, res = resolve(args[0], mdl); res.Ok {
-					val = Variable(math.Sqrt(x))
+			NumVars: 0,
+			Check:   nil,
+			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
+				if val, res = resolve(args[0], mdl); res.Ok {
+					val = val.Sqrt()
 				}
 				return
 			},
-			Macro: nil,
 		},
 		"SIN": &Function{
 			NumArgs: 1,
-			Fcn: func(args []string, mdl *Model) (val Variable, res *Result) {
-				var x float64
-				if x, res = resolve(args[0], mdl); res.Ok {
-					val = Variable(math.Sin(x))
+			NumVars: 0,
+			Check:   nil,
+			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
+				if val, res = resolve(args[0], mdl); res.Ok {
+					val = val.Sin()
 				}
 				return
 			},
-			Macro: nil,
 		},
 		"COS": &Function{
 			NumArgs: 1,
-			Fcn: func(args []string, mdl *Model) (val Variable, res *Result) {
-				var x float64
-				if x, res = resolve(args[0], mdl); res.Ok {
-					val = Variable(math.Cos(x))
+			NumVars: 0,
+			Check:   nil,
+			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
+				if val, res = resolve(args[0], mdl); res.Ok {
+					val = val.Cos()
 				}
 				return
 			},
-			Macro: nil,
 		},
 		"EXP": &Function{
 			NumArgs: 1,
-			Fcn: func(args []string, mdl *Model) (val Variable, res *Result) {
-				var x float64
-				if x, res = resolve(args[0], mdl); res.Ok {
-					val = Variable(math.Exp(x))
+			NumVars: 0,
+			Check:   nil,
+			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
+				if val, res = resolve(args[0], mdl); res.Ok {
+					val = val.Exp()
 				}
 				return
 			},
-			Macro: nil,
 		},
 		"LOG": &Function{
 			NumArgs: 1,
-			Fcn: func(args []string, mdl *Model) (val Variable, res *Result) {
-				var x float64
-				if x, res = resolve(args[0], mdl); res.Ok {
-					val = Variable(math.Log(x))
+			NumVars: 0,
+			Check:   nil,
+			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
+				if val, res = resolve(args[0], mdl); res.Ok {
+					val = val.Log()
 				}
 				return
 			},
-			Macro: nil,
 		},
 		"MAX": &Function{
 			NumArgs: 2,
-			Fcn: func(args []string, mdl *Model) (val Variable, res *Result) {
-				var a, b float64
+			NumVars: 0,
+			Check:   nil,
+			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
+				var a, b Variable
 				if a, res = resolve(args[0], mdl); res.Ok {
 					if b, res = resolve(args[1], mdl); res.Ok {
-						if compare(a, b) < 0 {
-							val = Variable(b)
+						if a.Compare(b) < 0 {
+							val = b
 						} else {
-							val = Variable(a)
+							val = a
 						}
 					}
 				}
 				return
 			},
-			Macro: nil,
 		},
 		"MIN": &Function{
 			NumArgs: 2,
-			Fcn: func(args []string, mdl *Model) (val Variable, res *Result) {
-				var a, b float64
+			NumVars: 0,
+			Check:   nil,
+			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
+				var a, b Variable
 				if a, res = resolve(args[0], mdl); res.Ok {
 					if b, res = resolve(args[1], mdl); res.Ok {
-						if compare(a, b) < 0 {
-							val = Variable(a)
+						if a.Compare(b) < 0 {
+							val = a
 						} else {
-							val = Variable(b)
+							val = b
 						}
 					}
 				}
 				return
 			},
-			Macro: nil,
 		},
 		"CLIP": &Function{
 			NumArgs: 4,
-			Fcn: func(args []string, mdl *Model) (val Variable, res *Result) {
-				var a, b, x, y float64
+			NumVars: 0,
+			Check:   nil,
+			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
+				var a, b, x, y Variable
 				if a, res = resolve(args[0], mdl); res.Ok {
 					if b, res = resolve(args[1], mdl); res.Ok {
 						if x, res = resolve(args[2], mdl); res.Ok {
 							if y, res = resolve(args[3], mdl); res.Ok {
-								if compare(x, y) < 0 {
-									val = Variable(b)
+								if x.Compare(y) < 0 {
+									val = b
 								} else {
-									val = Variable(a)
+									val = a
 								}
 							}
 						}
@@ -175,39 +165,41 @@ func init() {
 				}
 				return
 			},
-			Macro: nil,
 		},
 		"SWITCH": &Function{
 			NumArgs: 3,
-			Fcn: func(args []string, mdl *Model) (val Variable, res *Result) {
-				var a, b, x float64
+			NumVars: 0,
+			Check:   nil,
+			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
+				var a, b, x Variable
 				if a, res = resolve(args[0], mdl); res.Ok {
 					if b, res = resolve(args[1], mdl); res.Ok {
 						if x, res = resolve(args[2], mdl); res.Ok {
-							if compare(x, 0) == 0 {
-								val = Variable(a)
+							if x.Compare(0) == 0 {
+								val = a
 							} else {
-								val = Variable(b)
+								val = b
 							}
 						}
 					}
 				}
 				return
 			},
-			Macro: nil,
 		},
 		//--------------------------------------------------------------
 		// Generating functions
 		//--------------------------------------------------------------
 		"STEP": &Function{
 			NumArgs: 2,
-			Fcn: func(args []string, mdl *Model) (val Variable, res *Result) {
-				var a, b float64
+			NumVars: 0,
+			Check:   nil,
+			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
+				var a, b Variable
 				if a, res = resolve(args[0], mdl); res.Ok {
 					if b, res = resolve(args[1], mdl); res.Ok {
 						if time, ok := mdl.Current["TIME"]; ok {
-							if compare(float64(time), b) >= 0 {
-								val = Variable(a)
+							if time.Compare(b) >= 0 {
+								val = a
 							}
 						} else {
 							res = Failure(ErrModelNoTime)
@@ -216,11 +208,12 @@ func init() {
 				}
 				return
 			},
-			Macro: nil,
 		},
 		"RAMP": &Function{
 			NumArgs: 2,
-			Fcn: func(args []string, mdl *Model) (val Variable, res *Result) {
+			NumVars: 0,
+			Check:   nil,
+			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				if val, res = CallFunction("STEP", args, mdl); res.Ok {
 					lvl := args[len(args)-1]
 					dt := mdl.Current["DT"]
@@ -230,20 +223,20 @@ func init() {
 				}
 				return
 			},
-			Macro: nil,
 		},
 		"PULSE": &Function{
 			NumArgs: 3,
-			Fcn: func(args []string, mdl *Model) (val Variable, res *Result) {
-				var a, b, c float64
+			NumVars: 0,
+			Check:   nil,
+			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
+				var a, b, c Variable
 				if a, res = resolve(args[0], mdl); res.Ok {
 					if b, res = resolve(args[1], mdl); res.Ok {
 						if c, res = resolve(args[2], mdl); res.Ok {
 							if time, ok := mdl.Current["TIME"]; ok {
-								t := float64(time)
-								x := (t - b) / c
-								if compare(x, math.Floor(x)) == 0 {
-									val = Variable(a)
+								x := (time - b) / c
+								if x.Compare(x.Floor()) == 0 {
+									val = a
 								}
 							}
 						}
@@ -251,157 +244,166 @@ func init() {
 				}
 				return
 			},
-			Macro: nil,
 		},
 		"NOISE": &Function{
 			NumArgs: 0,
-			Fcn: func(args []string, mdl *Model) (val Variable, res *Result) {
+			NumVars: 0,
+			Check:   nil,
+			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				val = Variable(rand.Float64() - 0.5)
 				res = Success()
 				return
 			},
-			Macro: nil,
 		},
 		//--------------------------------------------------------------
 		// TABLE functions
 		//--------------------------------------------------------------
 		"TABLE": &Function{
 			NumArgs: 5,
-			Fcn: func(args []string, mdl *Model) (val Variable, res *Result) {
+			NumVars: 0,
+			Check:   nil,
+			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				return table(args, mdl, 0)
 			},
-			Macro: nil,
 		},
 		"TABHL": &Function{
 			NumArgs: 5,
-			Fcn: func(args []string, mdl *Model) (val Variable, res *Result) {
+			NumVars: 1,
+			Check:   nil,
+			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				return table(args, mdl, 0)
 			},
-			Macro: nil,
 		},
 		"TABXT": &Function{
 			NumArgs: 5,
-			Fcn: func(args []string, mdl *Model) (val Variable, res *Result) {
+			NumVars: 0,
+			Check:   nil,
+			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				return table(args, mdl, 1)
 			},
-			Macro: nil,
 		},
 		"TABPL": &Function{
 			NumArgs: 5,
-			Fcn: func(args []string, mdl *Model) (val Variable, res *Result) {
+			NumVars: 0,
+			Check:   nil,
+			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				return table(args, mdl, 2)
 			},
-			Macro: nil,
 		},
 		//--------------------------------------------------------------
 		// DELAY functions
 		//--------------------------------------------------------------
 		"DELAY1": &Function{
 			NumArgs: 2,
-			Fcn:     nil,
-			Macro: []*Line{
-				{"L", "$1.K=$1.J+DT*(@2.JK-@1.JK)", ""},
-				{"N", "$1=@2*@3", ""},
-				{"R", "@1.KL=$1.K/@3", ""},
+			NumVars: 2,
+			Check: func(args []ast.Expr) *Result {
+				// the first variable must be of kind RATE from OLD state
+				n, res := NewName(args[0])
+				if !res.Ok {
+					return res
+				}
+				if n.Kind != NAME_KIND_RATE {
+					return Failure(ErrModelFunction+": DELAY1 --  %s not a rate", n.String())
+				}
+				if n.Stage != NAME_STAGE_OLD {
+					return Failure(ErrModelFunction+": DELAY1 --  %s%s not old", n.Name, n.GetIndex())
+				}
+				return Success()
+			},
+			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
+				var (
+					name   *Name
+					a, b   Variable
+					v1, v2 Variable
+					dt     Variable
+				)
+				if b, res = resolve(args[1], mdl); !res.Ok {
+					return
+				}
+				if dt, res = resolve("DT", mdl); !res.Ok {
+					return
+				}
+				// get value of first argument
+				if a, res = resolve(args[0], mdl); !res.Ok {
+					// if it is missing, we are initializing (no previos state):
+					// get the current value of the variable
+					if name, res = NewNameFromString(args[0]); !res.Ok {
+						return
+					}
+					name.Stage = NAME_STAGE_NEW
+					if a, res = mdl.Get(name); !res.Ok {
+						return
+					}
+					// perform initialization
+					mdl.Current[args[2]] = a * b
+					mdl.Current[args[3]] = a
+					return
+				}
+				// get old internal state
+				if v1, res = resolve(args[2], mdl); !res.Ok {
+					return
+				}
+				if v2, res = resolve(args[3], mdl); !res.Ok {
+					return
+				}
+				// compute new internal state
+				v1 += dt * (a - v2)
+				v2 = v1 / b
+				mdl.Current[args[2]] = v1
+				mdl.Current[args[3]] = v2
+				// return function result
+				return v2, Success()
 			},
 		},
 		"DELAY3": &Function{
 			NumArgs: 2,
-			Fcn:     nil,
-			Macro: []*Line{
-				{"L", "$1.K=$1.J+DT*(@2.JK-$4.JK)", ""},
-				{"N", "$1=@2*@3/3", ""},
-				{"R", "$4.KL=$1.K*3/@3", ""},
-				{"L", "$2.K=$2.J+DT*($4.JK-$5.JK)", ""},
-				{"N", "$2=$4*@3/3", ""},
-				{"R", "$5.KL=$2.K*3/@3", ""},
-				{"L", "$3.K=$3.J+DT*($5.JK-@1.JK)", ""},
-				{"N", "$3=$5*@3/3", ""},
-				{"R", "@1.KL=$3.K*3/@3", ""},
-			},
+			NumVars: 0,
+			Check:   nil,
+			Eval:    nil,
 		},
 		"DELAYP": &Function{
 			NumArgs: 2,
-			Fcn:     nil,
-			Macro: []*Line{
-				{"L", "$1.K=$1.J+DT*(@2.JK-$4.JK)", ""},
-				{"N", "$1=@2*@3/3", ""},
-				{"R", "$4.KL=$1.K*3/@3", ""},
-				{"L", "$2.K=$2.J+DT*($4.JK-$5.JK)", ""},
-				{"N", "$2=$4*@3/3", ""},
-				{"R", "$5.KL=$2.K*3/@3", ""},
-				{"L", "$3.K=$3.J+DT*($5.JK-@1.JK)", ""},
-				{"N", "$3=$5*@3/3", ""},
-				{"R", "@1.KL=$3.K*3/@3", ""},
-				{"L", "@4.K=$1+$2+$3", ""},
-			},
+			NumVars: 0,
+			Check:   nil,
+			Eval:    nil,
 		},
 		//--------------------------------------------------------------
 		// SMOOTH functions
 		//--------------------------------------------------------------
 		"SMOOTH": &Function{
 			NumArgs: 2,
-			Fcn:     nil,
-			Macro: []*Line{
-				{"L", "@1.K=@1.J+(DT/@3)*(@2.J-@1.J)", ""},
-				{"N", "@1=@2", ""},
-			},
+			NumVars: 0,
+			Check:   nil,
+			Eval:    nil,
 		},
-	}
-	// compile regular expression for temp. variables
-	var err error
-	if tvar, err = regexp.Compile(`\$[0-9]+`); err != nil {
-		log.Fatal(err)
 	}
 }
 
-// HasFunction checks if a named function is available for given number
-// of arguments.
-func HasFunction(target *Name, name string, args []ast.Expr, depth int) (Macro []*Equation, res *Result) {
+// HasFunction checks if a named function is available for given number of
+// arguments. It returns the list of automatic variable assigned to the
+// function call instance.
+func HasFunction(target *Name, name string, args []ast.Expr) ([]ast.Expr, *Result) {
+	// check if we have a function of given name in our list
 	if f, ok := fcnList[name]; ok {
+		// check number of explicit arguments
 		if len(args) != f.NumArgs {
 			return nil, Failure(ErrParseInvalidNumArgs)
 		}
-		if f.Macro != nil {
-			if depth != 0 {
-				// Macro functions must resolve at depth 0
-				res = Failure(ErrParseMacroDepth+": %s", name)
-				return
-			}
-			// expand Macro function
-			temps := make(map[string]string)
-			temps["@1"] = target.Name
-			for i, expr := range args {
-				var n *Name
-				if n, res = NewName(expr); !res.Ok {
-					return
-				}
-				temps[fmt.Sprintf("@%d", i+2)] = n.Name
-			}
-			var eqns []*Equation
-			for _, eqn := range f.Macro {
-				line := eqn.Stmt
-				matches := tvar.FindAllString(line, -1)
-				for _, m := range matches {
-					if _, ok := temps[m]; !ok {
-						temps[m] = NewAutoVar()
-					}
-				}
-				for vn, repl := range temps {
-					line = strings.Replace(line, vn, repl, -1)
-				}
-				eqns, res = NewEquation(&Line{
-					Mode: eqn.Mode,
-					Stmt: line,
-				})
-				Macro = append(Macro, eqns...)
+		// if we have a list of internal variables, create them now
+		intern := make([]ast.Expr, f.NumVars)
+		for i := range intern {
+			intern[i] = &ast.Ident{
+				Name: NewAutoVar(),
 			}
 		}
-		res = Success()
-		return
+		// use optional check function to validate arguments
+		res := Success()
+		if f.Check != nil {
+			res = f.Check(args)
+		}
+		return intern, res
 	}
-	res = Failure(ErrParseUnknownFunction+": '%s'", name)
-	return
+	return nil, Failure(ErrParseUnknownFunction+": '%s'", name)
 }
 
 // CallFunction executes a function call with given arguments
@@ -415,7 +417,7 @@ func CallFunction(name string, args []string, mdl *Model) (val Variable, res *Re
 		res = Failure(ErrModelUnknownFunction+": %s\n", name)
 		return
 	}
-	val, res = f.Fcn(args, mdl)
+	val, res = f.Eval(args, mdl)
 	return
 }
 
@@ -473,20 +475,15 @@ func NewTable(list []string) (tbl *Table, res *Result) {
 //======================================================================
 
 // resolve returns a value from a number string or variable name
-func resolve(x string, mdl *Model) (val float64, res *Result) {
-	res = Success()
-	val, err := strconv.ParseFloat(x, 64)
-	if err != nil {
-		var (
-			name *Name
-			v    Variable
-		)
-		if name, res = NewNameFromString(x); res.Ok {
-			v, res = mdl.Get(name)
-			val = float64(v)
-		}
+func resolve(x string, mdl *Model) (Variable, *Result) {
+	if val, err := strconv.ParseFloat(x, 64); err == nil {
+		return Variable(val), Success()
 	}
-	return
+	name, res := NewNameFromString(x)
+	if res.Ok {
+		return mdl.Get(name)
+	}
+	return 0, res
 }
 
 // compare a variable to a value
@@ -515,7 +512,7 @@ func table(args []string, mdl *Model, mode int) (val Variable, res *Result) {
 		return
 	}
 	// get table parameters
-	var x, min, max, step float64
+	var x, min, max, step Variable
 	if x, res = resolve(args[1], mdl); !res.Ok {
 		return
 	}
@@ -529,17 +526,38 @@ func table(args []string, mdl *Model, mode int) (val Variable, res *Result) {
 		return
 	}
 	// check if parameters match table data
-	n := float64(len(tbl.Data) - 1)
-	if compare(max-min, n*step) != 0 {
+	n := Variable(len(tbl.Data) - 1)
+	if (max - min).Compare(n*step) != 0 {
 		res = Failure(ErrModelWrongTableSize)
 		return
 	}
 	// get inter-/extrapolation parameters
-	pos := n * (x - min) / (max - min)
+	pos := float64(n * (x - min) / (max - min))
 	idx := int(pos)
 	frac := pos - float64(idx)
 	Dbg.Msgf("TABLE: x=%f, pos=%f, idx=%d, frac=%f\n", x, pos, idx, frac)
 
+	// check for "HL" argument
+	if len(args) == 6 {
+		hl, ok := mdl.Current[args[5]]
+		if !ok {
+			hl = 1.0
+			mdl.Current[args[5]] = hl
+		}
+		// range check
+		if hl.Compare(0) != 0 {
+			outside := (compare(pos, 0) < 0) || (compare(pos, float64(n)) > 0)
+			if outside && hl.Compare(0) > 0 {
+				Msgf("WARN: Leaving table range '%s'...\n", args[0])
+				mdl.Current[args[5]] = -1.0
+			} else if !outside && hl.Compare(0) < 0 {
+				Msgf("WARN: Entering table range '%s'...\n", args[0])
+				mdl.Current[args[5]] = 1.0
+			}
+		}
+	}
+
+	// process table depending on mode
 	if mode == 2 {
 		// polynominal interpolation
 		val = Variable(newton(pos, tbl.A_j))
@@ -549,14 +567,14 @@ func table(args []string, mdl *Model, mode int) (val Variable, res *Result) {
 			if mode == 0 {
 				val = Variable(tbl.Data[0])
 			} else {
-				val = Variable((tbl.Data[1]-tbl.Data[0])/step*pos + tbl.Data[0])
+				val = Variable((tbl.Data[1]-tbl.Data[0])/float64(step)*pos + tbl.Data[0])
 			}
 		} else if idx > len(tbl.Data)-2 {
 			last := len(tbl.Data) - 1
 			if mode == 0 {
 				val = Variable(tbl.Data[last])
 			} else {
-				val = Variable((tbl.Data[last]-tbl.Data[last-1])/step*(pos-1) + tbl.Data[last])
+				val = Variable((tbl.Data[last]-tbl.Data[last-1])/float64(step)*(pos-1) + tbl.Data[last])
 			}
 		} else {
 			val = Variable(tbl.Data[idx] + (tbl.Data[idx+1]-tbl.Data[idx])*frac)
