@@ -46,6 +46,7 @@ const (
 	ErrModelMissingDef        = "Missing definition of value"
 	ErrModelNoData            = "No data available"
 	ErrModelFunction          = "Error in function"
+	ErrModelNotAvailable      = "Model equations not available"
 
 	ErrParseLineLength      = "Line too long"
 	ErrParseInvalidSpace    = "Space in equation"

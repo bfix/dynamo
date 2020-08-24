@@ -42,6 +42,14 @@ func NewEqnList() *EqnList {
 	}
 }
 
+// Clone an equation list
+func (el *EqnList) Clone() *EqnList {
+	out := new(EqnList)
+	out.eqns = make([]*Equation, el.Len())
+	copy(out.eqns, el.eqns)
+	return out
+}
+
 // Contains return true if equation (target) is in the list.
 func (el *EqnList) Contains(eqn *Equation) bool {
 	for _, e := range el.eqns {
@@ -50,6 +58,16 @@ func (el *EqnList) Contains(eqn *Equation) bool {
 		}
 	}
 	return false
+}
+
+// Replace equation in list.
+func (el *EqnList) Replace(eqn *Equation) {
+	for i, e := range el.eqns {
+		if e.Target.Compare(eqn.Target) == NAME_MATCH {
+			el.eqns[i] = eqn
+			break
+		}
+	}
 }
 
 // Dump logs the current equation list in human-readable form into

@@ -67,6 +67,7 @@ type Model struct {
 	Plot    *Plotter            // plotter instance
 	Verbose bool                // verbose messaging
 	Stack   map[string]*EqnList // stacked run models
+	Edit    bool                // editing model?
 }
 
 // NewModel returns a new (empty) model instance.
@@ -78,6 +79,7 @@ func NewModel(printer, plotter string) *Model {
 		Current: make(State),
 		Verbose: false,
 		Stack:   make(map[string]*EqnList),
+		Edit:    false,
 	}
 	mdl.Print = NewPrinter(printer, mdl)
 	mdl.Plot = NewPlotter(plotter, mdl)
@@ -172,12 +174,16 @@ func (mdl *Model) AddStatement(stmt *Line) (res *Result) {
 			}
 			// check if equation is already defined.
 			if mdl.Eqns.Contains(eqn) {
-				res = Failure(ErrModelEqnOverwrite)
-				break
+				if !mdl.Edit {
+					res = Failure(ErrModelEqnOverwrite)
+				}
+				Dbg.Msgf("ReplaceEquation: %s\n", eqn.String())
+				mdl.Eqns.Replace(eqn)
+			} else {
+				// unsorted append to list of equations
+				Dbg.Msgf("AddEquation: %s\n", eqn.String())
+				mdl.Eqns.Add(eqn)
 			}
-			// unsorted append to list of equations
-			Dbg.Msgf("AddEquation: %s\n", eqn.String())
-			mdl.Eqns.Add(eqn)
 		}
 
 	case "T":
@@ -253,13 +259,36 @@ func (mdl *Model) AddStatement(stmt *Line) (res *Result) {
 	case "RUN":
 		//--------------------------------------------------------------
 		// Run model
+		mdl.Edit = false
 		mdl.RunID = stmt.Stmt
-
 		Msgf("   Running system model '%s'...", mdl.RunID)
 		if res = mdl.Run(); res.Ok {
 			res = mdl.Output()
+			// Stack model equations for later use
+			mdl.Stack[mdl.RunID] = mdl.Eqns.Clone()
 		}
 		Msg("      Done.")
+
+	case "EDIT":
+		//--------------------------------------------------------------
+		// Edit stacked model:
+		// get named model equations
+		eqns, ok := mdl.Stack[stmt.Stmt]
+		if !ok {
+			res = Failure(ErrModelNotAvailable+": %s", stmt.Stmt)
+			break
+		}
+		Msgf("   Editing system model '%s':", mdl.RunID)
+		mdl.Eqns = eqns
+		mdl.Edit = true
+		// reset output
+		mdl.Print.Reset()
+		mdl.Plot.Reset()
+		// reset system vars
+		mdl.Current["TIME"] = 0
+		// reset states
+		mdl.Last = make(State)
+		mdl.Current = make(State)
 
 	default:
 		Dbg.Msgf("Unknown mode '%s'\n", stmt.Mode)

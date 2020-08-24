@@ -33,18 +33,18 @@ import (
 //======================================================================
 
 //----------------------------------------------------------------------
-// PrtVar
+// PrintVar
 //----------------------------------------------------------------------
 
-// PrtVar represents a printed variable
-type PrtVar struct {
+// PrintVar represents a printed variable
+type PrintVar struct {
 	TSVar
 	Scale float64
 }
 
-// NewPrtVar creates a new named variable for print output.
-func NewPrtVar(name string) *PrtVar {
-	return &PrtVar{
+// NewPrintVar creates a new named variable for print output.
+func NewPrintVar(name string) *PrintVar {
+	return &PrintVar{
 		TSVar: TSVar{
 			Name:   name,
 			Values: make([]float64, 0),
@@ -54,7 +54,7 @@ func NewPrtVar(name string) *PrtVar {
 }
 
 // Calculate optimal scale of data series
-func (pv *PrtVar) calcScale() {
+func (pv *PrintVar) calcScale() {
 	x := int(math.Round(math.Log10(math.Max(math.Abs(pv.Max), math.Abs(pv.Min))))) - 2
 	if x > 0 {
 		pv.Scale = math.Pow10(x)
@@ -112,7 +112,7 @@ func NewPrintJob(stmt string, prt *Printer) *PrintJob {
 		cols: make(map[int]*PrtCol, 1),
 	}
 	// Add TIME as first column
-	prt.vars["TIME"] = NewPrtVar("TIME")
+	prt.vars["TIME"] = NewPrintVar("TIME")
 	pj.cols[0] = NewPrtCol().Add("TIME")
 	return pj
 }
@@ -129,13 +129,14 @@ const (
 
 // Printer writes print output to a file (if defined)
 type Printer struct {
-	file  *os.File           // reference to print file (or nil if not defined)
-	mode  int                // printing mode (PRT_????)
-	mdl   *Model             // back-ref to model instance
-	steps int                // number of DT steps between printed points
-	vars  map[string]*PrtVar // variables to use in print
-	xnum  int                // number of x-values
-	jobs  []*PrintJob        // list of print jobs to perform
+	file  *os.File             // reference to print file (or nil if not defined)
+	mode  int                  // printing mode (PRT_????)
+	mdl   *Model               // back-ref to model instance
+	steps int                  // number of DT steps between printed points
+	vars  map[string]*PrintVar // variables to use in print
+	xnum  int                  // number of x-values
+	jobs  []*PrintJob          // list of print jobs to perform
+	add   bool                 // printer is adding jobs
 }
 
 // NewPrinter instantiates a new printer output.
@@ -154,8 +155,9 @@ func NewPrinter(file string, mdl *Model) *Printer {
 	prt := &Printer{
 		mdl:  mdl,
 		mode: mode,
-		vars: make(map[string]*PrtVar),
+		vars: make(map[string]*PrintVar),
 		jobs: make([]*PrintJob, 0),
+		add:  true,
 	}
 	// open file for output
 	if len(file) == 0 {
@@ -167,6 +169,16 @@ func NewPrinter(file string, mdl *Model) *Printer {
 		}
 	}
 	return prt
+}
+
+// Reset a printer
+func (prt *Printer) Reset() {
+	// clear time-series on PrintVar
+	for _, v := range prt.vars {
+		v.Reset()
+	}
+	prt.add = false
+	prt.xnum = 0
 }
 
 // Generate print output.
@@ -193,6 +205,13 @@ func (prt *Printer) Close() (res *Result) {
 func (prt *Printer) Prepare(stmt string) (res *Result) {
 	res = Success()
 
+	// if we do not add jobs, clear exisiting jobs and vars
+	if !prt.add {
+		prt.vars = make(map[string]*PrintVar)
+		prt.jobs = make([]*PrintJob, 0)
+		prt.add = true
+	}
+
 	// create a new print job
 	pj := NewPrintJob(stmt, prt)
 	prt.jobs = append(prt.jobs, pj)
@@ -203,7 +222,7 @@ func (prt *Printer) Prepare(stmt string) (res *Result) {
 	if len(grps) == 1 {
 		// we only have one column group: flat list of columns
 		for pos, label := range strings.Split(grps[0], ",") {
-			pv := &PrtVar{
+			pv := &PrintVar{
 				TSVar: TSVar{
 					Name:   label,
 					Values: make([]float64, 0),
@@ -229,7 +248,7 @@ func (prt *Printer) Prepare(stmt string) (res *Result) {
 			pj.cols[col] = column
 			for _, label := range strings.Split(grp, ",") {
 				// add variable
-				pv := &PrtVar{
+				pv := &PrintVar{
 					TSVar: TSVar{
 						Name:   label,
 						Values: make([]float64, 0),
@@ -292,24 +311,20 @@ func (prt *Printer) Add(epoch int) (res *Result) {
 //----------------------------------------------------------------------
 
 // Print collected data
-func (prt *Printer) print() (res *Result) {
-	res = Success()
-
-	Msgf("   Generating print(s)...")
-loop:
+func (prt *Printer) print() *Result {
+	Msgf("      Generating print(s)...")
 	// handle all print jobs
 	for _, pj := range prt.jobs {
 		switch prt.mode {
 		case PRT_DYNAMO:
-			res = prt.print_dyn(pj)
+			return prt.print_dyn(pj)
 		case PRT_CSV:
-			res = prt.print_csv(pj)
+			return prt.print_csv(pj)
 		default:
-			res = Failure(ErrPrintMode)
-			break loop
+			return Failure(ErrPrintMode)
 		}
 	}
-	return
+	return Success()
 }
 
 // Print data in classic DYNAMO style

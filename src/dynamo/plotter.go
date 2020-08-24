@@ -111,6 +111,7 @@ type Plotter struct {
 	dx    float64             // x-step
 	xnum  int                 // number of x-values
 	jobs  []*PlotJob          // list of plot jobs to perform
+	add   bool                // plotter is adding jobs
 }
 
 // NewPlotter instantiates a new plotter output.
@@ -130,6 +131,7 @@ func NewPlotter(file string, mdl *Model) *Plotter {
 		vars: make(map[string]*PlotVar),
 		xnum: 0,
 		jobs: make([]*PlotJob, 0),
+		add:  true,
 	}
 	if len(file) == 0 {
 		plt.file = nil
@@ -140,6 +142,15 @@ func NewPlotter(file string, mdl *Model) *Plotter {
 		}
 	}
 	return plt
+}
+
+// Reset a plotter
+func (plt *Plotter) Reset() {
+	// clear time-series on PltVar
+	for _, v := range plt.vars {
+		v.Reset()
+	}
+	plt.add = false
 }
 
 // Generate plot output.
@@ -162,9 +173,16 @@ func (plt *Plotter) Close() (res *Result) {
 	return
 }
 
-// Prepare a plot output
+// Prepare a plot output job
 func (plt *Plotter) Prepare(stmt string) (res *Result) {
 	res = Success()
+
+	// if we do not add jobs, clear exisiting jobs and vars
+	if !plt.add {
+		plt.vars = make(map[string]*PlotVar)
+		plt.jobs = make([]*PlotJob, 0)
+		plt.add = true
+	}
 
 	// create a new print job
 	pj := NewPlotJob(stmt, plt)
@@ -289,7 +307,7 @@ func (plt *Plotter) plot() (res *Result) {
 		return LOG_FACTOR[yk] * math.Pow10(int(yb))
 	}
 
-	Msgf("   Generating plot(s)...")
+	Msgf("      Generating plot(s)...")
 	for _, pj := range plt.jobs {
 		// get actual range for each plot group (if not defined in PLOT statement)
 		for _, grp := range pj.grps {

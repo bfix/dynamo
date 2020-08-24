@@ -288,3 +288,8 @@ func (ts *TSVar) Add(y float64) {
 	}
 	ts.Values = append(ts.Values, y)
 }
+
+// Reset time-series
+func (ts *TSVar) Reset() {
+	ts.Values = make([]float64, 0)
+}
