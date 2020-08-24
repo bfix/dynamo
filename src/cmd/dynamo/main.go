@@ -57,22 +57,14 @@ func main() {
 	}
 	defer src.Close()
 
-	dynamo.Msgf("Building system model...")
+	dynamo.Msg("Processing system model...")
 	dynamo.SetDebugger(debugFile)
 	mdl := dynamo.NewModel(printFile, plotFile)
 	mdl.Verbose = verbose
 	if res := mdl.Parse(src); !res.Ok {
 		dynamo.Fatalf("Line %d: %s\n", res.Line, res.Err.Error())
 	}
-	if verbose {
-		mdl.Dump()
-	}
-	dynamo.Msg("   Model generation completed.")
-
-	dynamo.Msgf("Running system model...")
-	if res := mdl.Run(); !res.Ok {
-		dynamo.Msgf("   FAILED: %s\n", res.Err.Error())
-	}
+	dynamo.Msg("   Model processing completed.")
 	mdl.Quit()
-	dynamo.Msgf("   Run completed.")
+	dynamo.Msg("Done.")
 }
