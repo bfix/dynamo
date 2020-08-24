@@ -47,8 +47,9 @@ type Equation struct {
 }
 
 // NewEquation converts a statement into one or more equation instances
-func NewEquation(stmt *Line) (eqns []*Equation, res *Result) {
+func NewEquation(stmt *Line) (eqns *EqnList, res *Result) {
 	res = Success()
+	eqns = NewEqnList()
 	Dbg.Msgf("NewEquation(%s)\n", stmt.String())
 
 	// check for spaces in equation
@@ -60,14 +61,12 @@ func NewEquation(stmt *Line) (eqns []*Equation, res *Result) {
 	if stmt.Mode == "C" && strings.Count(stmt.Stmt, "=") > 1 {
 		// add new extracted equation
 		addEqn := func(line string) (res *Result) {
-			var list []*Equation
+			var list *EqnList
 			if list, res = NewEquation(&Line{
 				Stmt: line,
 				Mode: "C",
 			}); res.Ok {
-				for _, e := range list {
-					eqns = append(eqns, e)
-				}
+				eqns.AddList(list)
 			}
 			return
 		}
@@ -198,7 +197,7 @@ func NewEquation(stmt *Line) (eqns []*Equation, res *Result) {
 
 		res = check(x.Y)
 		if res.Ok {
-			eqns = append(eqns, eqn)
+			eqns.Add(eqn)
 		}
 		return
 
