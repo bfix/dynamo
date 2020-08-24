@@ -169,13 +169,22 @@ func NewPrinter(file string, mdl *Model) *Printer {
 	return prt
 }
 
+// Generate print output.
+func (prt *Printer) Generate() *Result {
+	if prt.file != nil {
+		// do the actual printing
+		return prt.print()
+	}
+	return Success()
+}
+
 // Close a printer if job is complete
 func (prt *Printer) Close() (res *Result) {
 	res = Success()
 	if prt.file != nil {
-		defer prt.file.Close()
-		// we do the actual printing before closing down.
-		res = prt.print()
+		if err := prt.file.Close(); err != nil {
+			res = Failure(err)
+		}
 	}
 	return
 }

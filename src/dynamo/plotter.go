@@ -142,13 +142,22 @@ func NewPlotter(file string, mdl *Model) *Plotter {
 	return plt
 }
 
+// Generate plot output.
+func (plt *Plotter) Generate() *Result {
+	if plt.file != nil {
+		// do the actual plotting
+		return plt.plot()
+	}
+	return Success()
+}
+
 // Close plotter if model run is complete
 func (plt *Plotter) Close() (res *Result) {
 	res = Success()
 	if plt.file != nil {
-		defer plt.file.Close()
-		// we do the actual plotting before closing down.
-		res = plt.plot()
+		if err := plt.file.Close(); err != nil {
+			res = Failure(err)
+		}
 	}
 	return
 }
