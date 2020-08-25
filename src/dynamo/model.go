@@ -25,8 +25,8 @@ import (
 	"strings"
 )
 
-const (
-	strict = true // apply strict DYNAMO language rules
+var (
+	strict = false // apply strict DYNAMO language rules
 )
 
 //======================================================================
@@ -86,6 +86,11 @@ func NewModel(printer, plotter string) *Model {
 	return mdl
 }
 
+// Set strict mode (globally)
+func (mdl *Model) SetStrict(flag bool) {
+	strict = flag
+}
+
 // Output is called after a model is run to generate prints and plots.
 func (mdl *Model) Output() (res *Result) {
 	if res = mdl.Print.Generate(); !res.Ok {
@@ -112,7 +117,7 @@ func (mdl *Model) Quit() (res *Result) {
 // the log stream.
 func (mdl *Model) Dump() {
 
-	mdl.Eqns.Dump()
+	mdl.Eqns.Dump(mdl.Verbose)
 	Msg("-----------------------------------")
 	Msgf(" Number of TABLE def's: %4d\n", len(mdl.Tables))
 	for tname, tbl := range mdl.Tables {
@@ -437,6 +442,9 @@ func (mdl *Model) Run() (res *Result) {
 		for _, dep := range eqn.Dependencies {
 			used[dep.Name] = true
 		}
+		for _, ref := range eqn.References {
+			used[ref.Name] = true
+		}
 		if strings.Index("CRA", eqn.Mode) != -1 {
 			check[eqn.Target.Name] = true
 			continue
@@ -445,7 +453,9 @@ func (mdl *Model) Run() (res *Result) {
 		if _, ok := check[level]; ok {
 			check[level] = true
 		} else {
-			Msgf("         %s not initialized\n", level)
+			if eqn.Mode != "S" {
+				Msgf("         %s not initialized\n", level)
+			}
 			ok = false
 		}
 	}
@@ -509,7 +519,7 @@ func (mdl *Model) Run() (res *Result) {
 			mdl.Current[level] = val
 		}
 		// compute new levels
-		if res = compute("L", runEqns); !res.Ok {
+		if res = compute("LS", runEqns); !res.Ok {
 			break
 		}
 		Dbg.Msgf("[%d] %v\n", epoch, mdl.Current)
