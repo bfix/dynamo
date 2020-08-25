@@ -34,9 +34,9 @@ import (
 // arguments (as requested by the function). Instance arguments are stateful;
 // they refer to automatic variables.
 type Function struct {
-	NumArgs int // number of expected (explicit) arguments
-	NumVars int // number of requested internal variables
-	DepMode int // how to handle argument dependencies
+	NumArgs  int   // number of expected (explicit) arguments
+	NumVars  int   // number of requested internal variables
+	DepModes []int // how to handle explicit arguments as dependencies
 
 	Check func(args []ast.Expr) *Result                       // argument check function
 	Eval  func(args []string, mdl *Model) (Variable, *Result) // evalutae function
@@ -55,10 +55,10 @@ func init() {
 		// Mathematical functions
 		//--------------------------------------------------------------
 		"SQRT": &Function{
-			NumArgs: 1,
-			NumVars: 0,
-			DepMode: DEP_NORMAL,
-			Check:   nil,
+			NumArgs:  1,
+			NumVars:  0,
+			DepModes: []int{DEP_NORMAL},
+			Check:    nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				if val, res = resolve(args[0], mdl); res.Ok {
 					val = val.Sqrt()
@@ -67,10 +67,10 @@ func init() {
 			},
 		},
 		"SIN": &Function{
-			NumArgs: 1,
-			NumVars: 0,
-			DepMode: DEP_NORMAL,
-			Check:   nil,
+			NumArgs:  1,
+			NumVars:  0,
+			DepModes: []int{DEP_NORMAL},
+			Check:    nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				if val, res = resolve(args[0], mdl); res.Ok {
 					val = val.Sin()
@@ -79,10 +79,10 @@ func init() {
 			},
 		},
 		"COS": &Function{
-			NumArgs: 1,
-			NumVars: 0,
-			DepMode: DEP_NORMAL,
-			Check:   nil,
+			NumArgs:  1,
+			NumVars:  0,
+			DepModes: []int{DEP_NORMAL},
+			Check:    nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				if val, res = resolve(args[0], mdl); res.Ok {
 					val = val.Cos()
@@ -91,10 +91,10 @@ func init() {
 			},
 		},
 		"EXP": &Function{
-			NumArgs: 1,
-			NumVars: 0,
-			DepMode: DEP_NORMAL,
-			Check:   nil,
+			NumArgs:  1,
+			NumVars:  0,
+			DepModes: []int{DEP_NORMAL},
+			Check:    nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				if val, res = resolve(args[0], mdl); res.Ok {
 					val = val.Exp()
@@ -103,10 +103,10 @@ func init() {
 			},
 		},
 		"LOG": &Function{
-			NumArgs: 1,
-			NumVars: 0,
-			DepMode: DEP_NORMAL,
-			Check:   nil,
+			NumArgs:  1,
+			NumVars:  0,
+			DepModes: []int{DEP_NORMAL},
+			Check:    nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				if val, res = resolve(args[0], mdl); res.Ok {
 					val = val.Log()
@@ -115,10 +115,10 @@ func init() {
 			},
 		},
 		"MAX": &Function{
-			NumArgs: 2,
-			NumVars: 0,
-			DepMode: DEP_NORMAL,
-			Check:   nil,
+			NumArgs:  2,
+			NumVars:  0,
+			DepModes: []int{DEP_NORMAL, DEP_NORMAL},
+			Check:    nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				var a, b Variable
 				if a, res = resolve(args[0], mdl); res.Ok {
@@ -134,10 +134,10 @@ func init() {
 			},
 		},
 		"MIN": &Function{
-			NumArgs: 2,
-			NumVars: 0,
-			DepMode: DEP_NORMAL,
-			Check:   nil,
+			NumArgs:  2,
+			NumVars:  0,
+			DepModes: []int{DEP_NORMAL, DEP_NORMAL},
+			Check:    nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				var a, b Variable
 				if a, res = resolve(args[0], mdl); res.Ok {
@@ -153,10 +153,10 @@ func init() {
 			},
 		},
 		"CLIP": &Function{
-			NumArgs: 4,
-			NumVars: 0,
-			DepMode: DEP_NORMAL,
-			Check:   nil,
+			NumArgs:  4,
+			NumVars:  0,
+			DepModes: []int{DEP_NORMAL, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL},
+			Check:    nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				var a, b, x, y Variable
 				if a, res = resolve(args[0], mdl); res.Ok {
@@ -176,10 +176,10 @@ func init() {
 			},
 		},
 		"SWITCH": &Function{
-			NumArgs: 3,
-			NumVars: 0,
-			DepMode: DEP_NORMAL,
-			Check:   nil,
+			NumArgs:  3,
+			NumVars:  0,
+			DepModes: []int{DEP_NORMAL, DEP_NORMAL, DEP_NORMAL},
+			Check:    nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				var a, b, x Variable
 				if a, res = resolve(args[0], mdl); res.Ok {
@@ -200,10 +200,10 @@ func init() {
 		// Generating functions
 		//--------------------------------------------------------------
 		"STEP": &Function{
-			NumArgs: 2,
-			NumVars: 0,
-			DepMode: DEP_NORMAL,
-			Check:   nil,
+			NumArgs:  2,
+			NumVars:  0,
+			DepModes: []int{DEP_NORMAL, DEP_NORMAL},
+			Check:    nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				var a, b Variable
 				if a, res = resolve(args[0], mdl); res.Ok {
@@ -221,10 +221,10 @@ func init() {
 			},
 		},
 		"RAMP": &Function{
-			NumArgs: 2,
-			NumVars: 0,
-			DepMode: DEP_NORMAL,
-			Check:   nil,
+			NumArgs:  2,
+			NumVars:  0,
+			DepModes: []int{DEP_NORMAL, DEP_NORMAL},
+			Check:    nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				if val, res = CallFunction("STEP", args, mdl); res.Ok {
 					lvl := args[len(args)-1]
@@ -237,10 +237,10 @@ func init() {
 			},
 		},
 		"PULSE": &Function{
-			NumArgs: 3,
-			NumVars: 0,
-			DepMode: DEP_NORMAL,
-			Check:   nil,
+			NumArgs:  3,
+			NumVars:  0,
+			DepModes: []int{DEP_NORMAL, DEP_NORMAL, DEP_NORMAL},
+			Check:    nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				var a, b, c Variable
 				if a, res = resolve(args[0], mdl); res.Ok {
@@ -259,10 +259,10 @@ func init() {
 			},
 		},
 		"NOISE": &Function{
-			NumArgs: 0,
-			NumVars: 0,
-			DepMode: DEP_NORMAL,
-			Check:   nil,
+			NumArgs:  0,
+			NumVars:  0,
+			DepModes: nil,
+			Check:    nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				val = Variable(rand.Float64() - 0.5)
 				res = Success()
@@ -273,37 +273,37 @@ func init() {
 		// TABLE functions
 		//--------------------------------------------------------------
 		"TABLE": &Function{
-			NumArgs: 5,
-			NumVars: 0,
-			DepMode: DEP_NORMAL,
-			Check:   nil,
+			NumArgs:  5,
+			NumVars:  0,
+			DepModes: []int{DEP_NORMAL, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL},
+			Check:    nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				return table(args, mdl, 0)
 			},
 		},
 		"TABHL": &Function{
-			NumArgs: 5,
-			NumVars: 1,
-			DepMode: DEP_NORMAL,
-			Check:   nil,
+			NumArgs:  5,
+			NumVars:  1,
+			DepModes: []int{DEP_NORMAL, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL},
+			Check:    nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				return table(args, mdl, 0)
 			},
 		},
 		"TABXT": &Function{
-			NumArgs: 5,
-			NumVars: 0,
-			DepMode: DEP_NORMAL,
-			Check:   nil,
+			NumArgs:  5,
+			NumVars:  0,
+			DepModes: []int{DEP_NORMAL, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL},
+			Check:    nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				return table(args, mdl, 1)
 			},
 		},
 		"TABPL": &Function{
-			NumArgs: 5,
-			NumVars: 0,
-			DepMode: DEP_NORMAL,
-			Check:   nil,
+			NumArgs:  5,
+			NumVars:  0,
+			DepModes: []int{DEP_NORMAL, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL},
+			Check:    nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				return table(args, mdl, 2)
 			},
@@ -312,9 +312,9 @@ func init() {
 		// DELAY functions
 		//--------------------------------------------------------------
 		"DELAY1": &Function{
-			NumArgs: 2,
-			NumVars: 2,
-			DepMode: DEP_ENFORCE,
+			NumArgs:  2,
+			NumVars:  2,
+			DepModes: []int{DEP_ENFORCE, DEP_NORMAL},
 			Check: func(args []ast.Expr) *Result {
 				// the first variable must be of kind RATE from OLD state
 				n, res := NewName(args[0])
@@ -329,22 +329,27 @@ func init() {
 				}
 				return Success()
 			},
+			//----------------------------------------------------------
+			// DELAY3(A.JK,B)
+			//----------------------------------------------------------
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				var (
-					name   *Name
-					a, b   Variable
-					v1, v2 Variable
-					dt     Variable
+					name   *Name    // name of first argument (rate)
+					a, b   Variable // values for rate and delay
+					v1, v2 Variable // internal values
+					dt     Variable // time-step
 				)
+				// get value of second argument
 				if b, res = resolve(args[1], mdl); !res.Ok {
 					return
 				}
+				// get time step value
 				if dt, res = resolve("DT", mdl); !res.Ok {
 					return
 				}
 				// get value of first argument
 				if a, res = resolve(args[0], mdl); !res.Ok {
-					// if it is missing, we are initializing (no previos state):
+					// if it is missing, we are initializing (no previous state):
 					// get the current value of the variable
 					if name, res = NewNameFromString(args[0]); !res.Ok {
 						return
@@ -375,9 +380,9 @@ func init() {
 			},
 		},
 		"DELAY3": &Function{
-			NumArgs: 2,
-			NumVars: 0,
-			DepMode: DEP_ENFORCE,
+			NumArgs:  2,
+			NumVars:  5,
+			DepModes: []int{DEP_ENFORCE, DEP_NORMAL},
 			Check: func(args []ast.Expr) *Result {
 				// the first variable must be of kind RATE from OLD state
 				n, res := NewName(args[0])
@@ -392,29 +397,209 @@ func init() {
 				}
 				return Success()
 			},
+			//----------------------------------------------------------
+			// DELAY3(A.JK,B)
+			//----------------------------------------------------------
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
-				panic("DELAY3")
+				var (
+					name                   *Name    // name of first argument (rate)
+					a, b                   Variable // value of rate and delay
+					v1, v2, v3, v4, v5, v6 Variable // internal variables
+					dt                     Variable // time-step
+				)
+				// get value of second argument
+				if b, res = resolve(args[1], mdl); !res.Ok {
+					return
+				}
+				// get time step value.
+				if dt, res = resolve("DT", mdl); !res.Ok {
+					return
+				}
+				// get value of first argument
+				if a, res = resolve(args[0], mdl); !res.Ok {
+					// if it is missing, we are initializing (no previous state):
+					// get the current value of the variable
+					if name, res = NewNameFromString(args[0]); !res.Ok {
+						return
+					}
+					name.Stage = NAME_STAGE_NEW
+					if a, res = mdl.Get(name); !res.Ok {
+						return
+					}
+					// perform initialization
+					v1 = a * (b / 3.)
+					v2 = a
+					mdl.Current[args[2]] = v1
+					mdl.Current[args[3]] = v2
+					mdl.Current[args[4]] = v1
+					mdl.Current[args[5]] = v2
+					mdl.Current[args[6]] = v1
+					mdl.Current[args[7]] = v2
+					return
+				}
+				// get old internal state
+				if v1, res = resolve(args[2], mdl); !res.Ok {
+					return
+				}
+				if v2, res = resolve(args[3], mdl); !res.Ok {
+					return
+				}
+				if v3, res = resolve(args[4], mdl); !res.Ok {
+					return
+				}
+				if v4, res = resolve(args[5], mdl); !res.Ok {
+					return
+				}
+				if v5, res = resolve(args[6], mdl); !res.Ok {
+					return
+				}
+				if v6, res = resolve(args[7], mdl); !res.Ok {
+					return
+				}
+				// compute new internal state
+				v1 += dt * (a - v2)
+				v2 = v1 / (b / 3.)
+				v3 += dt * (v2 - v4)
+				v4 = v3 / (b / 3.)
+				v5 += dt * (v4 - v6)
+				v6 = v5 / (b / 3.)
+				mdl.Current[args[2]] = v1
+				mdl.Current[args[3]] = v2
+				mdl.Current[args[4]] = v3
+				mdl.Current[args[5]] = v4
+				mdl.Current[args[6]] = v5
+				mdl.Current[args[7]] = v6
+				// return function result
+				return v6, Success()
 			},
 		},
 		//--------------------------------------------------------------
 		// SMOOTH functions
 		//--------------------------------------------------------------
 		"SMOOTH": &Function{
-			NumArgs: 2,
-			NumVars: 0,
-			DepMode: DEP_SKIP,
-			Check:   nil,
+			NumArgs:  2,
+			NumVars:  1,
+			DepModes: []int{DEP_SKIP, DEP_NORMAL},
+			Check: func(args []ast.Expr) *Result {
+				// the first variable must be of kind LEVEL from NEW state
+				n, res := NewName(args[0])
+				if !res.Ok {
+					return res
+				}
+				if n.Kind != NAME_KIND_LEVEL {
+					return Failure(ErrModelFunction+": SMOOTH --  %s not a level", n.String())
+				}
+				if n.Stage != NAME_STAGE_NEW {
+					return Failure(ErrModelFunction+": SMOOTH --  %s%s not new", n.Name, n.GetIndex())
+				}
+				return Success()
+			},
+			//----------------------------------------------------------
+			// SMOOTH(A.K,B)
+			//----------------------------------------------------------
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
-				panic("SMOOTH")
+				var (
+					name *Name    // name of first argument (level)
+					a, b Variable // values for level and delay
+					v1   Variable // internal value
+					dt   Variable // time-step
+				)
+				// get value of second argument
+				if b, res = resolve(args[1], mdl); !res.Ok {
+					return
+				}
+				// get time step value
+				if dt, res = resolve("DT", mdl); !res.Ok {
+					return
+				}
+				// get value of first argument
+				if name, res = NewNameFromString(args[0]); !res.Ok {
+					return
+				}
+				name.Stage = NAME_STAGE_OLD
+				if a, res = mdl.Get(name); !res.Ok {
+					// if it is missing, we are initializing (no previous state):
+					mdl.Current[args[2]] = 0
+					res = Success()
+					return
+				}
+				// get old internal state
+				if v1, res = resolve(args[2], mdl); !res.Ok {
+					return
+				}
+				// compute new internal state
+				v1 += (dt / b) * (a - v1)
+				mdl.Current[args[2]] = v1
+				// return function result
+				return v1, Success()
 			},
 		},
 		"DLINF3": &Function{
-			NumArgs: 2,
-			NumVars: 0,
-			DepMode: DEP_ENFORCE,
-			Check:   nil,
+			NumArgs:  2,
+			NumVars:  3,
+			DepModes: []int{DEP_SKIP, DEP_NORMAL},
+			Check: func(args []ast.Expr) *Result {
+				// the first variable must be of kind LEVEL from NEW state
+				n, res := NewName(args[0])
+				if !res.Ok {
+					return res
+				}
+				if n.Kind != NAME_KIND_LEVEL {
+					return Failure(ErrModelFunction+": DLINF3 --  %s not a level", n.String())
+				}
+				if n.Stage != NAME_STAGE_NEW {
+					return Failure(ErrModelFunction+": DLINF3 --  %s%s not new", n.Name, n.GetIndex())
+				}
+				return Success()
+			},
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
-				panic("DLINF3")
+				var (
+					name       *Name    // name of first argument (level)
+					a, b       Variable // values for level and delay
+					v1, v2, v3 Variable // internal values
+					dt         Variable // time-step
+				)
+				// get value of second argument
+				if b, res = resolve(args[1], mdl); !res.Ok {
+					return
+				}
+				// get time step value
+				if dt, res = resolve("DT", mdl); !res.Ok {
+					return
+				}
+				// get value of first argument
+				// get value of first argument
+				if name, res = NewNameFromString(args[0]); !res.Ok {
+					return
+				}
+				name.Stage = NAME_STAGE_OLD
+				if a, res = mdl.Get(name); !res.Ok {
+					// if it is missing, we are initializing (no previos state):
+					mdl.Current[args[2]] = 0
+					mdl.Current[args[3]] = 0
+					mdl.Current[args[4]] = 0
+					res = Success()
+					return
+				}
+				// get old internal state
+				if v1, res = resolve(args[2], mdl); !res.Ok {
+					return
+				}
+				if v2, res = resolve(args[3], mdl); !res.Ok {
+					return
+				}
+				if v3, res = resolve(args[4], mdl); !res.Ok {
+					return
+				}
+				// compute new internal state
+				v1 += (dt / b) * (a - v1)
+				v2 += (dt / b) * (v1 - v2)
+				v3 += (dt / b) * (v2 - v3)
+				mdl.Current[args[2]] = v1
+				mdl.Current[args[3]] = v2
+				mdl.Current[args[4]] = v3
+				// return function result
+				return v3, Success()
 			},
 		},
 	}
@@ -423,12 +608,12 @@ func init() {
 // HasFunction checks if a named function is available for given number of
 // arguments. It returns the list of automatic variable assigned to the
 // function call instance.
-func HasFunction(name string, args []ast.Expr) (int, []ast.Expr, *Result) {
+func HasFunction(name string, args []ast.Expr) ([]int, []ast.Expr, *Result) {
 	// check if we have a function of given name in our list
 	if f, ok := fcnList[name]; ok {
 		// check number of explicit arguments
 		if len(args) != f.NumArgs {
-			return DEP_NORMAL, nil, Failure(ErrParseInvalidNumArgs)
+			return nil, nil, Failure(ErrParseInvalidNumArgs)
 		}
 		// if we have a list of internal variables, create them now
 		intern := make([]ast.Expr, f.NumVars)
@@ -442,9 +627,9 @@ func HasFunction(name string, args []ast.Expr) (int, []ast.Expr, *Result) {
 		if f.Check != nil {
 			res = f.Check(args)
 		}
-		return f.DepMode, intern, res
+		return f.DepModes, intern, res
 	}
-	return DEP_NORMAL, nil, Failure(ErrParseUnknownFunction+": '%s'", name)
+	return nil, nil, Failure(ErrParseUnknownFunction+": '%s'", name)
 }
 
 // CallFunction executes a function call with given arguments

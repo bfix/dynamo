@@ -186,13 +186,16 @@ func NewEquation(stmt *Line) (eqns *EqnList, res *Result) {
 				}
 				// check for function availibility
 				Dbg.Msgf("Calling '%s'\n", name.Name)
-				var intern []ast.Expr
-				if mode, intern, res = HasFunction(name.Name, x.Args); !res.Ok {
+				var (
+					intern []ast.Expr
+					modes  []int
+				)
+				if modes, intern, res = HasFunction(name.Name, x.Args); !res.Ok {
 					break
 				}
 				// check function arguments
-				for _, arg := range x.Args {
-					if res = check(arg, mode); !res.Ok {
+				for i, arg := range x.Args {
+					if res = check(arg, modes[i]); !res.Ok {
 						break
 					}
 				}
