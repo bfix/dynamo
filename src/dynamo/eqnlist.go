@@ -72,7 +72,7 @@ func (el *EqnList) Replace(eqn *Equation) {
 
 // Dump logs the current equation list in human-readable form into
 // the log stream.
-func (el *EqnList) Dump() {
+func (el *EqnList) Dump(verbose bool) {
 
 	// count equations by type
 	cnt := make(map[string]int)
@@ -95,8 +95,16 @@ func (el *EqnList) Dump() {
 	Msgf("       CONST equations: %4d\n", cnt["C"])
 	Msgf("        INIT equations: %4d\n", cnt["N"])
 	Msg("-----------------------------------")
-	for i, e := range el.eqns {
-		Msgf("   %5d: %s\n", i+1, e.String())
+	if verbose {
+		for i, e := range el.eqns {
+			Msgf("   %5d: %s\n", i+1, e.String())
+			if len(e.Dependencies) > 0 {
+				Msgf("          Deps=%v\n", e.Dependencies)
+			}
+			if len(e.References) > 0 {
+				Msgf("          Refs=%v\n", e.References)
+			}
+		}
 	}
 }
 
@@ -185,10 +193,6 @@ func (el *EqnList) Sort(mdl *Model) (eqns *EqnList, res *Result) {
 				if mdl.IsSystem(d.Name) {
 					continue
 				}
-				// check if dependency is refering to previous stage
-				if d.Stage == NAME_STAGE_OLD && !eqn.ForcedDeps {
-					continue
-				}
 				// get defining equation for dependency
 				x, ok := list[d.Name]
 				if ok {
@@ -202,12 +206,12 @@ func (el *EqnList) Sort(mdl *Model) (eqns *EqnList, res *Result) {
 				}
 				if !ok {
 					Dbg.Msgf("Failed in %s:\n", eqn.String())
+					Dbg.Msgf(ErrModelUnknownEqn+": %s\n", d.Name)
 					res = Failure(ErrModelUnknownEqn+": %s", d.Name)
 					break
 				}
 			}
 		}
-		Dbg.Msgf(">> %v\n", list)
 		var (
 			L     []*eqnEntry // empty list that will contain the sorted elements
 			S     []*eqnEntry // set of all nodes with no incoming edge
@@ -261,14 +265,14 @@ func (el *EqnList) Sort(mdl *Model) (eqns *EqnList, res *Result) {
 	for i, eqn := range el.eqns {
 		name := eqn.Target.Name
 		Dbg.Msgf("SortEquations << [%d] %s\n", i, eqn.String())
-		if strings.Index("CNA", eqn.Mode) != -1 {
+		if strings.Index("CN", eqn.Mode) != -1 {
 			if _, ok := eqnInit[name]; ok {
-				return nil, Failure(ErrModelVariabeExists+": %s", name)
+				return nil, Failure(ErrModelVariabeExists+": [1] %s", name)
 			}
 			eqnInit[name] = newEntry(i, name)
-		} else if strings.Index("RL", eqn.Mode) != -1 {
+		} else if strings.Index("ARLS", eqn.Mode) != -1 {
 			if _, ok := eqnRun[name]; ok {
-				return nil, Failure(ErrModelVariabeExists+": %s", name)
+				return nil, Failure(ErrModelVariabeExists+": [2] %s", name)
 			}
 			eqnRun[name] = newEntry(i, name)
 		} else {
@@ -289,7 +293,7 @@ func (el *EqnList) Sort(mdl *Model) (eqns *EqnList, res *Result) {
 				eqns.Add(el.eqns[i])
 			}
 			Dbg.Msgf("SortEquations: Finishing %d equations...\n", el.Len())
-			for i, eqn := range el.eqns {
+			for i, eqn := range eqns.List() {
 				Dbg.Msgf("SortEquations >> [%d] %s\n", i, eqn.String())
 			}
 		}
@@ -355,8 +359,6 @@ func (el *EqnList) validateEqn(mdl *Model, eqn *Equation, list map[string]*Equat
 						ref, ok = list[name]
 					}
 					if !ok {
-						Dbg.Msgf("[1]*** %v\n", eqn)
-						Dbg.Msgf("[2]*** %v\n", list)
 						return Failure(ErrModelUnknownEqn+": %s", name)
 					}
 				}
@@ -369,8 +371,6 @@ func (el *EqnList) validateEqn(mdl *Model, eqn *Equation, list map[string]*Equat
 					}
 				}
 				if !found {
-					Msgf("[A]*** %v -- %s\n", eqn, eqn.Target.String())
-					Msgf("[B]*** %v  -- %s\n", ref, ref.Target.String())
 					return Failure(ErrModelEqnBadDependClass+": %s", d.String())
 				}
 			}
@@ -436,7 +436,7 @@ func (el *EqnList) validateEqn(mdl *Model, eqn *Equation, list map[string]*Equat
 	case "S":
 		// Supplementary eqn.
 		res = check(
-			&Class{NAME_KIND_CONST, NAME_STAGE_NONE},
+			&Class{NAME_KIND_SUPPL, NAME_STAGE_NEW},
 			[]*Class{
 				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
 				&Class{NAME_KIND_AUX, NAME_STAGE_NEW},    // auxilieries
