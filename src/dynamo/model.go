@@ -501,8 +501,15 @@ func (mdl *Model) Run() (res *Result) {
 	}
 
 	for epoch, t := 1, time; t <= length; epoch, t = epoch+1, t+dt {
-		// compute auxiliaries and rates
-		if res = compute("AR", runEqns); !res.Ok {
+		// compute auxiliaries, rates and supplements
+		if res = compute("ARS", runEqns); !res.Ok {
+			break
+		}
+		// emit current values for plot and print
+		if res = mdl.Print.Add(epoch); !res.Ok {
+			break
+		}
+		if res = mdl.Plot.Add(epoch); !res.Ok {
 			break
 		}
 		// propagate state
@@ -511,15 +518,8 @@ func (mdl *Model) Run() (res *Result) {
 		for level, val := range mdl.Last {
 			mdl.Current[level] = val
 		}
-		// compute new levels and supplements
-		if res = compute("LS", runEqns); !res.Ok {
-			break
-		}
-		// emit current values for plot and print
-		if res = mdl.Print.Add(epoch); !res.Ok {
-			break
-		}
-		if res = mdl.Plot.Add(epoch); !res.Ok {
+		// compute new levels
+		if res = compute("L", runEqns); !res.Ok {
 			break
 		}
 		// propagate in time
