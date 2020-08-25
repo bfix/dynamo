@@ -76,12 +76,12 @@ The following options are available:
 console.
 * `-p <print-file>`: write printer output to file: the extension used in the
 filename specifies which print format to use:
-    * `.prt`: Generate classic DYNAMO print output
+    * `.prt`: Generate classic DYNAMO print output (line printer)
     * `.csv`: Generate CSV-compatible files (e.g. for import into other apps)
 * `-g <plot-file>`: write plot output to file: the extension used in the
 filename specifies whicht plot format to use:
-    * `.plt`: Generate classic DYNAMO plot output
-    * `.svg`: Generate SVG plots (not implemented yet).
+    * `.plt`: Generate classic DYNAMO plot output (line printer)
+    * `.gnuplot`: Generate GNUplot script (SVG generator)
 
 See the README in the `rt/` folder and subfolders for more details on the
 example models provided.
