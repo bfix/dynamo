@@ -103,14 +103,19 @@ func NewName(v ast.Expr) (name *Name, res *Result) {
 		name.Kind = NAME_KIND_CONST
 		name.Stage = NAME_STAGE_NONE
 		name.Name = x.Name
-		if strict {
-			if len(name.Name) > MAX_NAME_LENGTH {
-				res = Failure(ErrParseNameLength+": %d", len(name.Name))
+		if len(name.Name) > MAX_NAME_LENGTH {
+			if strict {
+				res = Failure(ErrParseNameLength+": %s", name.Name)
 			} else {
-				start := []rune(name.Name)[0]
-				if !unicode.IsLetter(start) && start != '_' {
-					res = Failure(ErrParseInvalidName+": %s", name.Name)
-				}
+				Msgf("WARN: "+ErrParseNameLength+": %s", name.Name)
+			}
+		}
+		start := []rune(name.Name)[0]
+		if !unicode.IsLetter(start) && start != '_' {
+			if strict {
+				res = Failure(ErrParseInvalidName+": %s", name.Name)
+			} else {
+				Msgf("WARN: "+ErrParseInvalidName+": %s", name.Name)
 			}
 		}
 		return
@@ -121,7 +126,6 @@ func NewName(v ast.Expr) (name *Name, res *Result) {
 		res = name.setIndex(x.Sel.Name)
 	default:
 		res = Failure(ErrParseInvalidName+": %s", reflect.TypeOf(v))
-		panic("")
 	}
 	return
 }
@@ -134,8 +138,12 @@ func NewNameFromString(n string) (name *Name, res *Result) {
 	name.Kind = NAME_KIND_CONST
 	name.Stage = NAME_STAGE_NONE
 	name.Name = parts[0]
-	if strict && len(name.Name) > MAX_NAME_LENGTH {
-		res = Failure(ErrParseNameLength+": %d", len(name.Name))
+	if len(name.Name) > MAX_NAME_LENGTH {
+		if strict {
+			res = Failure(ErrParseNameLength+": %d", len(name.Name))
+		} else {
+			Msgf("WARN: "+ErrParseNameLength+": %s", name.Name)
+		}
 	}
 	if len(parts) > 1 {
 		res = name.setIndex(parts[1])
