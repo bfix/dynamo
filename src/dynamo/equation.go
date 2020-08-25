@@ -240,6 +240,7 @@ func (eqn *Equation) DependsOn(v *Name) bool {
 // of a DYNAMO model.
 func (eqn *Equation) Eval(mdl *Model) (res *Result) {
 	var val Variable
+	Dbg.Msgf("----------------------------\n")
 	Dbg.Msgf("Evaluating: %s\n", eqn.String())
 	if val, res = eval(eqn.Formula, mdl); res.Ok {
 		res = mdl.Set(eqn.Target, val)
@@ -289,7 +290,11 @@ func eval(expr ast.Expr, mdl *Model) (val Variable, res *Result) {
 		if name, res = NewName(x); !res.Ok {
 			break
 		}
-		val, res = mdl.Get(name)
+		if val, res = mdl.Get(name); !res.Ok {
+			Msgf("WARN: %s", res.Err.Error())
+			val = 0
+			res = Success()
+		}
 
 	case *ast.CallExpr:
 		// get name of function
@@ -335,6 +340,7 @@ func eval(expr ast.Expr, mdl *Model) (val Variable, res *Result) {
 				default:
 					res = Failure(ErrParseInvalidOp+": %d", x.Op)
 				}
+				args[i] = val.String()
 			default:
 				res = Failure(ErrModelFunctionArg+": %s", reflect.TypeOf(x))
 				return
