@@ -372,7 +372,7 @@ func (plt *Plotter) plot_dyn(pj *PlotJob) *Result {
 			}
 		}
 		if i%10 == 0 {
-			return fmt.Sprintf("%10.3f%s", x, line)
+			return fmt.Sprintf("%9.3f %s", x, line)
 		}
 		return fmt.Sprintf("          %s", line)
 	}
@@ -407,8 +407,8 @@ func (plt *Plotter) plot_dyn(pj *PlotJob) *Result {
 		for _, grp := range pj.grps {
 			for _, v := range grp.Vars {
 				pv := plt.vars[v]
-				pos := int(math.Round(100*grp.Norm(pv.Values[i]))) + 11
-				if pos < 11 || pos > 111 {
+				pos := int(math.Round(100*grp.Norm(pv.Values[i]))) + 10
+				if pos < 10 || pos > 110 {
 					Msgf("y=%f, range=(%f,%f)\n", pv.Values[i], grp.Min, grp.Max)
 				}
 				line[pos] = pv.Sym
