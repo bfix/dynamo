@@ -76,16 +76,18 @@ func (pg *PlotGroup) Norm(y float64) float64 {
 // PlotJob is plottig a graph of selected variables
 type PlotJob struct {
 	stmt string       // PLOT statement
+	id   int          // identifier
 	plt  *Plotter     // plotter instance
 	grps []*PlotGroup // plot ranges
 }
 
 // NewPlotJob creates a new plott job for the plotter based on
 // the PLOT statement.
-func NewPlotJob(stmt string, plt *Plotter) *PlotJob {
+func NewPlotJob(id int, stmt string, plt *Plotter) *PlotJob {
 	pj := &PlotJob{
 		stmt: stmt,
 		plt:  plt,
+		id:   id,
 		grps: make([]*PlotGroup, 0),
 	}
 	return pj
@@ -97,12 +99,14 @@ func NewPlotJob(stmt string, plt *Plotter) *PlotJob {
 
 // Plotting modes
 const (
-	PLT_DYNAMO = iota // Old-style DYNAMO plotting mode (ASCII)
+	PLT_DYNAMO  = iota // Old-style DYNAMO plotting mode (ASCII)
+	PLT_GNUPLOT        // GNUplot script
 )
 
 // Plotter to generate graphs from DYNAMO data
 type Plotter struct {
 	file  *os.File            // reference to debug file (or nil if not defined)
+	base  string              // name of plot file (without extension)
 	mode  int                 // plotting mode (PLT_????)
 	mdl   *Model              // back-ref to model instance
 	steps int                 // number of DT steps between plotting points
@@ -118,10 +122,13 @@ type Plotter struct {
 func NewPlotter(file string, mdl *Model) *Plotter {
 	// determine plotting mode from file name
 	mode := PLT_DYNAMO
-	if pos := strings.LastIndex(file, "."); pos != -1 {
+	pos := strings.LastIndex(file, ".")
+	if pos != -1 {
 		switch strings.ToUpper(file[pos:]) {
-		case ".PRT":
+		case ".PLT":
 			mode = PLT_DYNAMO
+		case ".GNUPLOT":
+			mode = PLT_GNUPLOT
 		}
 	}
 	// create new plotting instance
@@ -136,6 +143,7 @@ func NewPlotter(file string, mdl *Model) *Plotter {
 	if len(file) == 0 {
 		plt.file = nil
 	} else {
+		plt.base = file[:pos]
 		var err error
 		if plt.file, err = os.Create(file); err != nil {
 			Fatal(err.Error())
@@ -185,7 +193,7 @@ func (plt *Plotter) Prepare(stmt string) (res *Result) {
 	}
 
 	// create a new print job
-	pj := NewPlotJob(stmt, plt)
+	pj := NewPlotJob(len(plt.jobs)+1, stmt, plt)
 	plt.jobs = append(plt.jobs, pj)
 
 	// split into groups with same scale first
@@ -253,6 +261,17 @@ func (plt *Plotter) Start() (res *Result) {
 		plt.x0 = float64(x0)
 		plt.dx = float64(pp)
 		plt.steps = steps
+
+		// "plot" information shared by all jobs
+		if plt.mode == PLT_GNUPLOT {
+			// set line styles for plotting
+			plt.file.WriteString("set style line 1 lc rgb '#ff0000' lt 1 lw 2 pi -1 ps 1.0\n")
+			plt.file.WriteString("set style line 2 lc rgb '#00ff00' lt 1 lw 2 pi -1 ps 1.0\n")
+			plt.file.WriteString("set style line 3 lc rgb '#0000ff' lt 1 lw 2 pi -1 ps 1.0\n")
+			plt.file.WriteString("set style line 4 lc rgb '#ff00ff' lt 1 lw 2 pi -1 ps 1.0\n")
+			plt.file.WriteString("set style line 5 lc rgb '#00ffff' lt 1 lw 2 pi -1 ps 1.0\n")
+			plt.file.WriteString("set style line 6 lc rgb '#ffff00' lt 1 lw 2 pi -1 ps 1.0\n")
+		}
 	}
 	return
 }
@@ -343,6 +362,8 @@ func (plt *Plotter) plot() (res *Result) {
 		switch plt.mode {
 		case PLT_DYNAMO:
 			res = plt.plot_dyn(pj)
+		case PLT_GNUPLOT:
+			res = plt.plot_gnu(pj)
 		default:
 			res = Failure(ErrPlotMode)
 		}
@@ -354,6 +375,7 @@ func (plt *Plotter) plot() (res *Result) {
 // Plot routines
 //----------------------------------------------------------------------
 
+// Plot in classic DYNAMO style (ASCII plot on a line printer)
 func (plt *Plotter) plot_dyn(pj *PlotJob) *Result {
 
 	// make horizontal plot line without graph
@@ -416,5 +438,112 @@ func (plt *Plotter) plot_dyn(pj *PlotJob) *Result {
 		}
 		fmt.Fprintln(plt.file, string(line))
 	}
+	return Success()
+}
+
+// Generate GNUplot script for output
+func (plt *Plotter) plot_gnu(pj *PlotJob) *Result {
+
+	// assemble y-tics (multiple scales; one per plot group)
+	ytics := make([]string, 5)
+	addScale := func(i int, val string) {
+		x := ytics[i]
+		if len(x) > 0 {
+			x += "\\n"
+		}
+		ytics[i] = x + strings.TrimSpace(val)
+	}
+	for _, grp := range pj.grps {
+		w := (grp.Max - grp.Min) / 4.
+		addScale(0, FormatNumber(grp.Min, 4, 3))
+		addScale(1, FormatNumber(grp.Min+w, 4, 3))
+		addScale(2, FormatNumber(grp.Min+2*w, 4, 3))
+		addScale(3, FormatNumber(grp.Min+3*w, 4, 3))
+		addScale(4, FormatNumber(grp.Max, 4, 3))
+	}
+	scales := float64(len(pj.grps))
+	// emit data
+	var list []string
+	fmt.Fprintf(plt.file, "$data_%d << EOD\n", pj.id)
+	for x, i := plt.x0, 0; i < plt.xnum; x, i = x+plt.dx, i+1 {
+		fmt.Fprintf(plt.file, "%f", x)
+		for _, grp := range pj.grps {
+			for _, v := range grp.Vars {
+				pv := plt.vars[v]
+				if i == 0 {
+					list = append(list, v)
+				}
+				fmt.Fprintf(plt.file, " %f", grp.Norm(pv.Values[i]))
+			}
+		}
+		fmt.Fprintln(plt.file)
+	}
+	fmt.Fprintln(plt.file, "EOD")
+	fmt.Fprintf(plt.file, "set lmargin screen %f\n", (scales-2.)/10.)
+	fmt.Fprintf(plt.file, "set xrange [%f:%f]\n", plt.x0, plt.x0+plt.dx*float64(plt.xnum-1))
+	fmt.Fprintf(plt.file, "set ytics rotate by 90 offset -%f (", scales+1)
+	for i, yt := range ytics {
+		if i > 0 {
+			plt.file.WriteString(",")
+		}
+		fmt.Fprintf(plt.file, "\"%s\" %f", yt, float64(i)/4.)
+	}
+	fmt.Fprintln(plt.file, ")")
+	fmt.Fprintln(plt.file, "set yrange[0:1]")
+	fmt.Fprintln(plt.file, "set term svg")
+	fmt.Fprintf(plt.file, "set output \"%s_(%d).svg\"\n", plt.base, pj.id)
+	fmt.Fprintf(plt.file, "plot ")
+	for i, label := range list {
+		if i > 0 {
+			plt.file.WriteString(",")
+		}
+		fmt.Fprintf(plt.file, "$data_%d using 1:%d with line ls %d title \"%s\"", pj.id, i+2, (i%6)+1, label)
+	}
+	fmt.Fprintln(plt.file)
+	/*
+
+
+
+			// emit plot header
+			fmt.Fprintf(plt.file, "\n\n")
+			fmt.Fprintf(plt.file, "Plot for '%s'\n", plt.mdl.RunID)
+			fmt.Fprintf(plt.file, "         %s\n", pj.stmt)
+			fmt.Fprintln(plt.file)
+
+			// emit plot y-axis (multiple scales; one per plot group)
+			for _, grp := range pj.grps {
+				s := ""
+				for _, v := range grp.Vars {
+					pv := plt.vars[v]
+					if len(s) > 0 {
+						s += ","
+					}
+					s += fmt.Sprintf("%s=%c", pv.Name, pv.Sym)
+				}
+				w := (grp.Max - grp.Min) / 4.
+				y0 := FormatNumber(grp.Min, 4, 3)
+				y1 := FormatNumber(grp.Min+w, 4, 3)
+				y2 := FormatNumber(grp.Min+2*w, 4, 3)
+				y3 := FormatNumber(grp.Min+3*w, 4, 3)
+				y4 := FormatNumber(grp.Max, 4, 3)
+				fmt.Fprintf(plt.file, "%14s%25s%25s%25s%25s %s\n", y0, y1, y2, y3, y4, s)
+			}
+
+		// draw graph
+		for x, i := plt.x0, 0; i < plt.xnum; x, i = x+plt.dx, i+1 {
+			line := []rune(mkLine(x, i))
+			for _, grp := range pj.grps {
+				for _, v := range grp.Vars {
+					pv := plt.vars[v]
+					pos := int(math.Round(100*grp.Norm(pv.Values[i]))) + 10
+					if pos < 10 || pos > 110 {
+						Msgf("y=%f, range=(%f,%f)\n", pv.Values[i], grp.Min, grp.Max)
+					}
+					line[pos] = pv.Sym
+				}
+			}
+			fmt.Fprintln(plt.file, string(line))
+		}
+	*/
 	return Success()
 }
