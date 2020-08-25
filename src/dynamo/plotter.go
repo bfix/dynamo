@@ -269,7 +269,7 @@ func (plt *Plotter) Add(epoch int) (res *Result) {
 		for name, pv := range plt.vars {
 			val, ok := plt.mdl.Current[name]
 			if !ok {
-				return Failure(ErrModelNoVariable+": %s", name)
+				return Failure(ErrModelNoVariable+": %s [Plotter]", name)
 			}
 			pv.Add(float64(val))
 		}

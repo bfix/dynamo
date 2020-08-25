@@ -297,7 +297,7 @@ func (prt *Printer) Add(epoch int) (res *Result) {
 		for name, pv := range prt.vars {
 			val, ok := prt.mdl.Current[name]
 			if !ok {
-				return Failure(ErrModelNoVariable+": %s", name)
+				return Failure(ErrModelNoVariable+": %s [Printer]", name)
 			}
 			pv.Add(float64(val))
 		}
