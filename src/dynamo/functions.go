@@ -336,7 +336,7 @@ func init() {
 				var (
 					name   *Name    // name of first argument (rate)
 					a, b   Variable // values for rate and delay
-					v1, v2 Variable // internal values
+					l1, r1 Variable // internal values (level, rate)
 					dt     Variable // time-step
 				)
 				// get value of second argument
@@ -361,27 +361,28 @@ func init() {
 					// perform initialization
 					mdl.Current[args[2]] = a * b
 					mdl.Current[args[3]] = a
+					val = a
 					return
 				}
 				// get old internal state
-				if v1, res = resolve(args[2], mdl); !res.Ok {
+				if l1, res = resolve(args[2], mdl); !res.Ok {
 					return
 				}
-				if v2, res = resolve(args[3], mdl); !res.Ok {
+				if r1, res = resolve(args[3], mdl); !res.Ok {
 					return
 				}
 				// compute new internal state
-				v1 += dt * (a - v2)
-				v2 = v1 / b
-				mdl.Current[args[2]] = v1
-				mdl.Current[args[3]] = v2
+				l1 += dt * (a - r1)
+				r1 = l1 / b
+				mdl.Current[args[2]] = l1
+				mdl.Current[args[3]] = r1
 				// return function result
-				return v2, Success()
+				return r1, Success()
 			},
 		},
 		"DELAY3": &Function{
 			NumArgs:  2,
-			NumVars:  6,
+			NumVars:  7,
 			DepModes: []int{DEP_ENFORCE, DEP_NORMAL},
 			Check: func(args []ast.Expr) *Result {
 				// the first variable must be of kind RATE from OLD state
@@ -402,10 +403,12 @@ func init() {
 			//----------------------------------------------------------
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				var (
-					name                   *Name    // name of first argument (rate)
-					a, b                   Variable // value of rate and delay
-					v1, v2, v3, v4, v5, v6 Variable // internal variables
-					dt                     Variable // time-step
+					name   *Name    // name of first argument (rate)
+					a, b   Variable // value of rate and delay (arguments)
+					l1, r1 Variable // internal variables (#1)
+					l2, r2 Variable // internal variables (#2)
+					l3, r3 Variable // internal variables (#3)
+					dl, dt Variable // delay and time-step
 				)
 				// get value of second argument
 				if b, res = resolve(args[1], mdl); !res.Ok {
@@ -427,50 +430,61 @@ func init() {
 						return
 					}
 					// perform initialization
-					v1 = a * (b / 3.)
-					v2 = a
-					mdl.Current[args[2]] = v1
-					mdl.Current[args[3]] = v2
-					mdl.Current[args[4]] = v1
-					mdl.Current[args[5]] = v2
-					mdl.Current[args[6]] = v1
-					mdl.Current[args[7]] = v2
+					l1 = a * (b / 3.)
+					mdl.Current[args[2]] = l1
+					mdl.Current[args[3]] = a
+					mdl.Current[args[4]] = l1
+					mdl.Current[args[5]] = a
+					mdl.Current[args[6]] = l1
+					mdl.Current[args[7]] = a
+					mdl.Current[args[8]] = b / 3.
+					val = a
 					return
 				}
 				// get old internal state
-				if v1, res = resolve(args[2], mdl); !res.Ok {
+				if l1, res = resolve(args[2], mdl); !res.Ok {
 					return
 				}
-				if v2, res = resolve(args[3], mdl); !res.Ok {
+				if r1, res = resolve(args[3], mdl); !res.Ok {
 					return
 				}
-				if v3, res = resolve(args[4], mdl); !res.Ok {
+				if l2, res = resolve(args[4], mdl); !res.Ok {
 					return
 				}
-				if v4, res = resolve(args[5], mdl); !res.Ok {
+				if r2, res = resolve(args[5], mdl); !res.Ok {
 					return
 				}
-				if v5, res = resolve(args[6], mdl); !res.Ok {
+				if l3, res = resolve(args[6], mdl); !res.Ok {
 					return
 				}
-				if v6, res = resolve(args[7], mdl); !res.Ok {
+				if r3, res = resolve(args[7], mdl); !res.Ok {
+					return
+				}
+				if dl, res = resolve(args[8], mdl); !res.Ok {
 					return
 				}
 				// compute new internal state
-				v1 += dt * (a - v2)
-				v2 = v1 / (b / 3.)
-				v3 += dt * (v2 - v4)
-				v4 = v3 / (b / 3.)
-				v5 += dt * (v4 - v6)
-				v6 = v5 / (b / 3.)
-				mdl.Current[args[2]] = v1
-				mdl.Current[args[3]] = v2
-				mdl.Current[args[4]] = v3
-				mdl.Current[args[5]] = v4
-				mdl.Current[args[6]] = v5
-				mdl.Current[args[7]] = v6
+
+				/*
+					a     $6.kl=$5.k/$7.k
+					l     $5.k=$5.j+dt*($4.jk-$6.jk)
+					r     $4.kl=$3.k/$7.k
+					l     $3.k=$3.j+dt*($2.jk-$4.jk)
+					r     $2.kl=$1.k/7.k
+					l     $1.k=$1.j+dt*(a.jk-$2.jk)
+					a     $7.k=b/3
+				*/
+				mdl.Current[args[8]] = b / 3.
+				val = l3 / dl
+				mdl.Current[args[7]] = val
+				mdl.Current[args[6]] += dt * (r2 - r3)
+				mdl.Current[args[5]] = l2 / dl
+				mdl.Current[args[4]] += dt * (r1 - r2)
+				mdl.Current[args[3]] = l1 / dl
+				mdl.Current[args[2]] += dt * (a - r1)
 				// return function result
-				return v6, Success()
+				res = Success()
+				return
 			},
 		},
 		//--------------------------------------------------------------
@@ -519,8 +533,13 @@ func init() {
 				name.Stage = NAME_STAGE_OLD
 				if a, res = mdl.Get(name); !res.Ok {
 					// if it is missing, we are initializing (no previous state):
-					mdl.Current[args[2]] = 0
-					res = Success()
+					name.Stage = NAME_STAGE_NEW
+					if a, res = mdl.Get(name); !res.Ok {
+						a = 0
+						res = Success()
+					}
+					mdl.Current[args[2]] = a
+					val = a
 					return
 				}
 				// get old internal state
@@ -536,8 +555,8 @@ func init() {
 		},
 		"DLINF3": &Function{
 			NumArgs:  2,
-			NumVars:  3,
-			DepModes: []int{DEP_SKIP, DEP_NORMAL},
+			NumVars:  4,
+			DepModes: []int{DEP_NORMAL, DEP_NORMAL},
 			Check: func(args []ast.Expr) *Result {
 				// the first variable must be of kind LEVEL from NEW state
 				n, res := NewName(args[0])
@@ -554,10 +573,10 @@ func init() {
 			},
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				var (
-					name       *Name    // name of first argument (level)
-					a, b       Variable // values for level and delay
-					v1, v2, v3 Variable // internal values
-					dt         Variable // time-step
+					name           *Name    // name of first argument (level)
+					a, b           Variable // values for level and delay
+					v1, v2, v3, v4 Variable // internal values
+					dt             Variable // time-step
 				)
 				// get value of second argument
 				if b, res = resolve(args[1], mdl); !res.Ok {
@@ -575,10 +594,15 @@ func init() {
 				name.Stage = NAME_STAGE_OLD
 				if a, res = mdl.Get(name); !res.Ok {
 					// if it is missing, we are initializing (no previos state):
-					mdl.Current[args[2]] = 0
-					mdl.Current[args[3]] = 0
-					mdl.Current[args[4]] = 0
-					res = Success()
+					name.Stage = NAME_STAGE_NEW
+					if a, res = mdl.Get(name); !res.Ok {
+						return
+					}
+					mdl.Current[args[2]] = a
+					mdl.Current[args[3]] = a
+					mdl.Current[args[4]] = a
+					mdl.Current[args[5]] = b / 3.
+					val = a
 					return
 				}
 				// get old internal state
@@ -591,13 +615,18 @@ func init() {
 				if v3, res = resolve(args[4], mdl); !res.Ok {
 					return
 				}
+				if v4, res = resolve(args[5], mdl); !res.Ok {
+					return
+				}
 				// compute new internal state
-				v1 += (dt / b) * (a - v1)
-				v2 += (dt / b) * (v1 - v2)
-				v3 += (dt / b) * (v2 - v3)
+				v3 += dt * (v2 - v3) / v4
+				v2 += dt * (v1 - v2) / v4
+				v1 += dt * (a - v1) / v4
+				v4 = b / 3.
 				mdl.Current[args[2]] = v1
 				mdl.Current[args[3]] = v2
 				mdl.Current[args[4]] = v3
+				mdl.Current[args[5]] = v4
 				// return function result
 				return v3, Success()
 			},
