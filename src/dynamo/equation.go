@@ -29,6 +29,13 @@ import (
 	"strings"
 )
 
+// Dependency handling modes
+const (
+	DEP_NORMAL  = iota // normal dependencies
+	DEP_ENFORCE        // enforce dependencies
+	DEP_SKIP           // skip dependencies
+)
+
 //----------------------------------------------------------------------
 // EQUATION -- An equation is a formula that describes the (new) value
 // of a variable with given name as a computation between old variables
@@ -39,8 +46,8 @@ import (
 // Equation represents a formula; the result is assigned to a variable
 type Equation struct {
 	Target       *Name    // Name of (indexed) variable (left side of equation)
-	Dependencies []*Name  // List of (indexed) variables from right side.
-	ForcedDeps   bool     // Force use of dependencies even if stage is not NEW
+	Dependencies []*Name  // List of (indexed) dependencies from right side.
+	References   []*Name  // List of references on the right side (non-dependent)
 	Mode         string   // Mode of equation as given in the source
 	Formula      ast.Expr // formula in Go AST
 	stmt         string   // complete equation in DYNAMO notation
@@ -106,7 +113,7 @@ func NewEquation(stmt *Line) (eqns *EqnList, res *Result) {
 			stmt:         stmt.Stmt,
 			Mode:         stmt.Mode,
 			Dependencies: make([]*Name, 0),
-			ForcedDeps:   false,
+			References:   make([]*Name, 0),
 		}
 		eqn.Formula = x.Y
 
@@ -122,7 +129,7 @@ func NewEquation(stmt *Line) (eqns *EqnList, res *Result) {
 			}
 			eqn.Target.Kind = NAME_KIND_INIT
 		case "A":
-			if eqn.Target.Kind != NAME_KIND_LEVEL {
+			if eqn.Target.Kind != NAME_KIND_LEVEL && eqn.Target.Kind != NAME_KIND_RATE {
 				res = Failure(ErrModelEqnBadTargetKind)
 				return
 			}
@@ -144,8 +151,8 @@ func NewEquation(stmt *Line) (eqns *EqnList, res *Result) {
 		}
 
 		// Handle RIGHT side of equation recursively
-		var check func(ast.Expr) *Result
-		check = func(f ast.Expr) (res *Result) {
+		var check func(ast.Expr, int) *Result
+		check = func(f ast.Expr, mode int) (res *Result) {
 			res = Success()
 			switch x := f.(type) {
 			case *ast.Ident, *ast.SelectorExpr:
@@ -154,18 +161,23 @@ func NewEquation(stmt *Line) (eqns *EqnList, res *Result) {
 					if stmt.Mode == "N" {
 						name.Stage = NAME_STAGE_NONE
 					}
-					eqn.Dependencies = append(eqn.Dependencies, name)
+					// add variable as dependency or reference
+					if (mode == DEP_NORMAL && name.Stage != NAME_STAGE_OLD) || mode == DEP_ENFORCE {
+						eqn.Dependencies = append(eqn.Dependencies, name)
+					} else {
+						eqn.References = append(eqn.References, name)
+					}
 				}
 			case *ast.BinaryExpr:
-				if res = check(x.X); res.Ok {
-					res = check(x.Y)
+				if res = check(x.X, mode); res.Ok {
+					res = check(x.Y, mode)
 				}
 			case *ast.ParenExpr:
-				res = check(x.X)
+				res = check(x.X, mode)
 			case *ast.BasicLit:
 				// skipped intentionally
 			case *ast.UnaryExpr:
-				res = check(x.X)
+				res = check(x.X, mode)
 			case *ast.CallExpr:
 				// get function name
 				var name *Name
@@ -175,19 +187,17 @@ func NewEquation(stmt *Line) (eqns *EqnList, res *Result) {
 				// check for function availibility
 				Dbg.Msgf("Calling '%s'\n", name.Name)
 				var intern []ast.Expr
-				if intern, res = HasFunction(eqn.Target, name.Name, x.Args); !res.Ok {
+				if mode, intern, res = HasFunction(name.Name, x.Args); !res.Ok {
 					break
 				}
 				// check function arguments
 				for _, arg := range x.Args {
-					if res = check(arg); !res.Ok {
+					if res = check(arg, mode); !res.Ok {
 						break
 					}
 				}
 				// add internal variable
 				x.Args = append(x.Args, intern...)
-				// function enforces timeless dependencies
-				eqn.ForcedDeps = true
 
 			default:
 				res = Failure(ErrParseSyntax+": %v\n", reflect.TypeOf(x))
@@ -195,7 +205,7 @@ func NewEquation(stmt *Line) (eqns *EqnList, res *Result) {
 			return
 		}
 
-		res = check(x.Y)
+		res = check(x.Y, DEP_NORMAL)
 		if res.Ok {
 			eqns.Add(eqn)
 		}
@@ -307,6 +317,21 @@ func eval(expr ast.Expr, mdl *Model) (val Variable, res *Result) {
 					return
 				}
 				args[i] = val.String()
+			case *ast.ParenExpr:
+				if val, res = eval(x, mdl); !res.Ok {
+					return
+				}
+				args[i] = val.String()
+			case *ast.UnaryExpr:
+				if val, res = eval(x.X, mdl); !res.Ok {
+					break
+				}
+				switch x.Op {
+				case token.SUB:
+					val = -val
+				default:
+					res = Failure(ErrParseInvalidOp+": %d", x.Op)
+				}
 			default:
 				res = Failure(ErrModelFunctionArg+": %s", reflect.TypeOf(x))
 				return
