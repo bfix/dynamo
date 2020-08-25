@@ -262,6 +262,8 @@ func (el *EqnList) Sort(mdl *Model) (eqns *EqnList, res *Result) {
 	Dbg.Msgf("SortEquations: Sorting %d equations...\n", el.Len())
 	eqnInit := make(map[string]*eqnEntry)
 	eqnRun := make(map[string]*eqnEntry)
+	var listSuppl []int
+	eqnSuppl := make(map[string]*eqnEntry)
 	for i, eqn := range el.eqns {
 		name := eqn.Target.Name
 		Dbg.Msgf("SortEquations << [%d] %s\n", i, eqn.String())
@@ -270,11 +272,16 @@ func (el *EqnList) Sort(mdl *Model) (eqns *EqnList, res *Result) {
 				return nil, Failure(ErrModelVariabeExists+": [1] %s", name)
 			}
 			eqnInit[name] = newEntry(i, name)
-		} else if strings.Index("ARLS", eqn.Mode) != -1 {
+		} else if strings.Index("ARL", eqn.Mode) != -1 {
 			if _, ok := eqnRun[name]; ok {
 				return nil, Failure(ErrModelVariabeExists+": [2] %s", name)
 			}
 			eqnRun[name] = newEntry(i, name)
+		} else if strings.Index("S", eqn.Mode) != -1 {
+			if _, ok := eqnSuppl[name]; ok {
+				return nil, Failure(ErrModelVariabeExists+": [3] %s", name)
+			}
+			listSuppl = append(listSuppl, i)
 		} else {
 			return nil, Failure(ErrModelEqnBadMode)
 		}
@@ -290,6 +297,9 @@ func (el *EqnList) Sort(mdl *Model) (eqns *EqnList, res *Result) {
 				eqns.Add(el.eqns[i])
 			}
 			for _, i := range listRun {
+				eqns.Add(el.eqns[i])
+			}
+			for _, i := range listSuppl {
 				eqns.Add(el.eqns[i])
 			}
 			Dbg.Msgf("SortEquations: Finishing %d equations...\n", el.Len())
