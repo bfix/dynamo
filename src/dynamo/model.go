@@ -326,7 +326,7 @@ func (mdl *Model) Get(name *Name) (val Variable, res *Result) {
 			return
 		}
 	}
-	res = Failure(ErrModelNoVariable+": '%s'", name.String())
+	res = Failure(ErrModelNoVariable+": %s", name.String())
 	return
 }
 
@@ -501,8 +501,18 @@ func (mdl *Model) Run() (res *Result) {
 	}
 
 	for epoch, t := 1, time; t <= length; epoch, t = epoch+1, t+dt {
-		// compute auxiliaries
+		// compute auxiliaries and rates
 		if res = compute("AR", runEqns); !res.Ok {
+			break
+		}
+		// propagate state
+		mdl.Last = mdl.Current
+		mdl.Current = make(State)
+		for level, val := range mdl.Last {
+			mdl.Current[level] = val
+		}
+		// compute new levels and supplements
+		if res = compute("LS", runEqns); !res.Ok {
 			break
 		}
 		// emit current values for plot and print
@@ -512,17 +522,6 @@ func (mdl *Model) Run() (res *Result) {
 		if res = mdl.Plot.Add(epoch); !res.Ok {
 			break
 		}
-		// propagate state
-		mdl.Last = mdl.Current
-		mdl.Current = make(State)
-		for level, val := range mdl.Last {
-			mdl.Current[level] = val
-		}
-		// compute new levels
-		if res = compute("LS", runEqns); !res.Ok {
-			break
-		}
-		Dbg.Msgf("[%d] %v\n", epoch, mdl.Current)
 		// propagate in time
 		mdl.Current["TIME"] = mdl.Current["TIME"] + mdl.Current["DT"]
 	}
