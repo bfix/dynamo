@@ -381,7 +381,7 @@ func init() {
 		},
 		"DELAY3": &Function{
 			NumArgs:  2,
-			NumVars:  5,
+			NumVars:  6,
 			DepModes: []int{DEP_ENFORCE, DEP_NORMAL},
 			Check: func(args []ast.Expr) *Result {
 				// the first variable must be of kind RATE from OLD state
