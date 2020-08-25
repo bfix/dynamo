@@ -36,6 +36,7 @@ import (
 type Function struct {
 	NumArgs int // number of expected (explicit) arguments
 	NumVars int // number of requested internal variables
+	DepMode int // how to handle argument dependencies
 
 	Check func(args []ast.Expr) *Result                       // argument check function
 	Eval  func(args []string, mdl *Model) (Variable, *Result) // evalutae function
@@ -56,6 +57,7 @@ func init() {
 		"SQRT": &Function{
 			NumArgs: 1,
 			NumVars: 0,
+			DepMode: DEP_NORMAL,
 			Check:   nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				if val, res = resolve(args[0], mdl); res.Ok {
@@ -67,6 +69,7 @@ func init() {
 		"SIN": &Function{
 			NumArgs: 1,
 			NumVars: 0,
+			DepMode: DEP_NORMAL,
 			Check:   nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				if val, res = resolve(args[0], mdl); res.Ok {
@@ -78,6 +81,7 @@ func init() {
 		"COS": &Function{
 			NumArgs: 1,
 			NumVars: 0,
+			DepMode: DEP_NORMAL,
 			Check:   nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				if val, res = resolve(args[0], mdl); res.Ok {
@@ -89,6 +93,7 @@ func init() {
 		"EXP": &Function{
 			NumArgs: 1,
 			NumVars: 0,
+			DepMode: DEP_NORMAL,
 			Check:   nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				if val, res = resolve(args[0], mdl); res.Ok {
@@ -100,6 +105,7 @@ func init() {
 		"LOG": &Function{
 			NumArgs: 1,
 			NumVars: 0,
+			DepMode: DEP_NORMAL,
 			Check:   nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				if val, res = resolve(args[0], mdl); res.Ok {
@@ -111,6 +117,7 @@ func init() {
 		"MAX": &Function{
 			NumArgs: 2,
 			NumVars: 0,
+			DepMode: DEP_NORMAL,
 			Check:   nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				var a, b Variable
@@ -129,6 +136,7 @@ func init() {
 		"MIN": &Function{
 			NumArgs: 2,
 			NumVars: 0,
+			DepMode: DEP_NORMAL,
 			Check:   nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				var a, b Variable
@@ -147,6 +155,7 @@ func init() {
 		"CLIP": &Function{
 			NumArgs: 4,
 			NumVars: 0,
+			DepMode: DEP_NORMAL,
 			Check:   nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				var a, b, x, y Variable
@@ -169,6 +178,7 @@ func init() {
 		"SWITCH": &Function{
 			NumArgs: 3,
 			NumVars: 0,
+			DepMode: DEP_NORMAL,
 			Check:   nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				var a, b, x Variable
@@ -192,6 +202,7 @@ func init() {
 		"STEP": &Function{
 			NumArgs: 2,
 			NumVars: 0,
+			DepMode: DEP_NORMAL,
 			Check:   nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				var a, b Variable
@@ -212,6 +223,7 @@ func init() {
 		"RAMP": &Function{
 			NumArgs: 2,
 			NumVars: 0,
+			DepMode: DEP_NORMAL,
 			Check:   nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				if val, res = CallFunction("STEP", args, mdl); res.Ok {
@@ -227,6 +239,7 @@ func init() {
 		"PULSE": &Function{
 			NumArgs: 3,
 			NumVars: 0,
+			DepMode: DEP_NORMAL,
 			Check:   nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				var a, b, c Variable
@@ -248,6 +261,7 @@ func init() {
 		"NOISE": &Function{
 			NumArgs: 0,
 			NumVars: 0,
+			DepMode: DEP_NORMAL,
 			Check:   nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				val = Variable(rand.Float64() - 0.5)
@@ -261,6 +275,7 @@ func init() {
 		"TABLE": &Function{
 			NumArgs: 5,
 			NumVars: 0,
+			DepMode: DEP_NORMAL,
 			Check:   nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				return table(args, mdl, 0)
@@ -269,6 +284,7 @@ func init() {
 		"TABHL": &Function{
 			NumArgs: 5,
 			NumVars: 1,
+			DepMode: DEP_NORMAL,
 			Check:   nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				return table(args, mdl, 0)
@@ -277,6 +293,7 @@ func init() {
 		"TABXT": &Function{
 			NumArgs: 5,
 			NumVars: 0,
+			DepMode: DEP_NORMAL,
 			Check:   nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				return table(args, mdl, 1)
@@ -285,6 +302,7 @@ func init() {
 		"TABPL": &Function{
 			NumArgs: 5,
 			NumVars: 0,
+			DepMode: DEP_NORMAL,
 			Check:   nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				return table(args, mdl, 2)
@@ -296,6 +314,7 @@ func init() {
 		"DELAY1": &Function{
 			NumArgs: 2,
 			NumVars: 2,
+			DepMode: DEP_ENFORCE,
 			Check: func(args []ast.Expr) *Result {
 				// the first variable must be of kind RATE from OLD state
 				n, res := NewName(args[0])
@@ -358,14 +377,24 @@ func init() {
 		"DELAY3": &Function{
 			NumArgs: 2,
 			NumVars: 0,
-			Check:   nil,
-			Eval:    nil,
-		},
-		"DELAYP": &Function{
-			NumArgs: 2,
-			NumVars: 0,
-			Check:   nil,
-			Eval:    nil,
+			DepMode: DEP_ENFORCE,
+			Check: func(args []ast.Expr) *Result {
+				// the first variable must be of kind RATE from OLD state
+				n, res := NewName(args[0])
+				if !res.Ok {
+					return res
+				}
+				if n.Kind != NAME_KIND_RATE {
+					return Failure(ErrModelFunction+": DELAY3 --  %s not a rate", n.String())
+				}
+				if n.Stage != NAME_STAGE_OLD {
+					return Failure(ErrModelFunction+": DELAY3 --  %s%s not old", n.Name, n.GetIndex())
+				}
+				return Success()
+			},
+			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
+				panic("DELAY3")
+			},
 		},
 		//--------------------------------------------------------------
 		// SMOOTH functions
@@ -373,8 +402,20 @@ func init() {
 		"SMOOTH": &Function{
 			NumArgs: 2,
 			NumVars: 0,
+			DepMode: DEP_SKIP,
 			Check:   nil,
-			Eval:    nil,
+			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
+				panic("SMOOTH")
+			},
+		},
+		"DLINF3": &Function{
+			NumArgs: 2,
+			NumVars: 0,
+			DepMode: DEP_ENFORCE,
+			Check:   nil,
+			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
+				panic("DLINF3")
+			},
 		},
 	}
 }
@@ -382,12 +423,12 @@ func init() {
 // HasFunction checks if a named function is available for given number of
 // arguments. It returns the list of automatic variable assigned to the
 // function call instance.
-func HasFunction(target *Name, name string, args []ast.Expr) ([]ast.Expr, *Result) {
+func HasFunction(name string, args []ast.Expr) (int, []ast.Expr, *Result) {
 	// check if we have a function of given name in our list
 	if f, ok := fcnList[name]; ok {
 		// check number of explicit arguments
 		if len(args) != f.NumArgs {
-			return nil, Failure(ErrParseInvalidNumArgs)
+			return DEP_NORMAL, nil, Failure(ErrParseInvalidNumArgs)
 		}
 		// if we have a list of internal variables, create them now
 		intern := make([]ast.Expr, f.NumVars)
@@ -401,9 +442,9 @@ func HasFunction(target *Name, name string, args []ast.Expr) ([]ast.Expr, *Resul
 		if f.Check != nil {
 			res = f.Check(args)
 		}
-		return intern, res
+		return f.DepMode, intern, res
 	}
-	return nil, Failure(ErrParseUnknownFunction+": '%s'", name)
+	return DEP_NORMAL, nil, Failure(ErrParseUnknownFunction+": '%s'", name)
 }
 
 // CallFunction executes a function call with given arguments
