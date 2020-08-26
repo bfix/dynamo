@@ -330,7 +330,7 @@ func init() {
 				return Success()
 			},
 			//----------------------------------------------------------
-			// DELAY3(A.JK,B)
+			// DELAY1(A.JK,B)
 			//----------------------------------------------------------
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				var (
@@ -356,7 +356,10 @@ func init() {
 					}
 					name.Stage = NAME_STAGE_NEW
 					if a, res = mdl.Get(name); !res.Ok {
-						return
+						// we need to compute an initial value for 'name'
+						if a, res = mdl.Initial(name.Name); !res.Ok {
+							return
+						}
 					}
 					// perform initialization
 					mdl.Current[args[2]] = a * b
@@ -427,7 +430,10 @@ func init() {
 					}
 					name.Stage = NAME_STAGE_NEW
 					if a, res = mdl.Get(name); !res.Ok {
-						return
+						// we need to compute an initial value for 'name'
+						if a, res = mdl.Initial(name.Name); !res.Ok {
+							return
+						}
 					}
 					// perform initialization
 					l1 = a * (b / 3.)
@@ -464,16 +470,6 @@ func init() {
 					return
 				}
 				// compute new internal state
-
-				/*
-					a     $6.kl=$5.k/$7.k
-					l     $5.k=$5.j+dt*($4.jk-$6.jk)
-					r     $4.kl=$3.k/$7.k
-					l     $3.k=$3.j+dt*($2.jk-$4.jk)
-					r     $2.kl=$1.k/7.k
-					l     $1.k=$1.j+dt*(a.jk-$2.jk)
-					a     $7.k=b/3
-				*/
 				mdl.Current[args[8]] = b / 3.
 				val = l3 / dl
 				mdl.Current[args[7]] = val
@@ -535,8 +531,10 @@ func init() {
 					// if it is missing, we are initializing (no previous state):
 					name.Stage = NAME_STAGE_NEW
 					if a, res = mdl.Get(name); !res.Ok {
-						a = 0
-						res = Success()
+						// we need to compute an initial value for 'name'
+						if a, res = mdl.Initial(name.Name); !res.Ok {
+							return
+						}
 					}
 					mdl.Current[args[2]] = a
 					val = a
@@ -571,6 +569,9 @@ func init() {
 				}
 				return Success()
 			},
+			//----------------------------------------------------------
+			// DLINF3(A.K,B)
+			//----------------------------------------------------------
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				var (
 					name           *Name    // name of first argument (level)
@@ -596,7 +597,10 @@ func init() {
 					// if it is missing, we are initializing (no previos state):
 					name.Stage = NAME_STAGE_NEW
 					if a, res = mdl.Get(name); !res.Ok {
-						return
+						// we need to compute an initial value for 'name'
+						if a, res = mdl.Initial(name.Name); !res.Ok {
+							return
+						}
 					}
 					mdl.Current[args[2]] = a
 					mdl.Current[args[3]] = a
