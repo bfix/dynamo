@@ -238,8 +238,9 @@ func (eqn *Equation) DependsOn(v *Name) bool {
 // Eval an equation and get the resulting numerical value and a status
 // result. The computation is performed on the state variables (level, rate)
 // of a DYNAMO model.
-func (eqn *Equation) Eval(mdl *Model) (res *Result) {
-	var val Variable
+// If the 'ini' flag is set, the initial value is computed by treating all
+// quantity references in "initial value" form.
+func (eqn *Equation) Eval(mdl *Model) (val Variable, res *Result) {
 	Dbg.Msgf("----------------------------\n")
 	Dbg.Msgf("Evaluating: %s\n", eqn.String())
 	missing := make(map[string]*Name)
@@ -319,9 +320,11 @@ func eval(expr ast.Expr, mdl *Model, missing map[string]*Name) (val Variable, re
 			break
 		}
 		if val, res = mdl.Get(name); !res.Ok {
-			missing[name.Name] = name
-			val = 0
-			res = Success()
+			if val, res = mdl.Initial(name.Name); !res.Ok {
+				missing[name.Name] = name
+				val = 0
+				res = Success()
+			}
 		}
 
 	case *ast.CallExpr:
