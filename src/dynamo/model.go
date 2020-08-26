@@ -559,12 +559,13 @@ loop:
 		}
 		// propagate state
 		mdl.Last = mdl.Current.Clone()
+		// propagate in time
+		mdl.Current["TIME"] = mdl.Current["TIME"] + mdl.Current["DT"]
+
 		// compute new levels
 		if res = compute("L", runEqns); !res.Ok {
 			break
 		}
-		// propagate in time
-		mdl.Current["TIME"] = mdl.Current["TIME"] + mdl.Current["DT"]
 	}
 	return
 }
