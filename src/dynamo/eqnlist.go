@@ -405,68 +405,68 @@ func (el *EqnList) validateEqn(mdl *Model, eqn *Equation, list map[string]*Equat
 	// perform validation
 	switch eqn.Mode {
 	case "C":
-		// Constant eqn.
+		// Constant eqn.:  C=<number>
 		res = check(
 			&Class{NAME_KIND_CONST, NAME_STAGE_NONE},
 			[]*Class{
 				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // other constants
 			})
 	case "N":
-		// Initializer eqn.
+		// Initializer eqn.:  N={C, N}; can be used on levels, aux ad rates
 		res = check(
 			&Class{NAME_KIND_INIT, NAME_STAGE_NONE},
 			[]*Class{
 				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
-				&Class{NAME_KIND_INIT, NAME_STAGE_NONE},  // other initializers
+				&Class{NAME_KIND_INIT, NAME_STAGE_NONE},  // initializers
 			})
 		if !res.Ok {
 			Msgf("   WARN: %s\n", res.Err.Error())
 			res = Success()
 		}
 	case "L":
-		// Constant eqn.
+		// Level eqn.:  L.K = L.J + DT * {C, L.J, A.J, R.JK}
 		res = check(
 			&Class{NAME_KIND_LEVEL, NAME_STAGE_NEW},
 			[]*Class{
 				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
-				&Class{NAME_KIND_LEVEL, NAME_STAGE_NEW},  // currnt levels
-				&Class{NAME_KIND_LEVEL, NAME_STAGE_OLD},  // old levels
+				&Class{NAME_KIND_LEVEL, NAME_STAGE_OLD},  // levels
+				&Class{NAME_KIND_AUX, NAME_STAGE_OLD},    // auxilliaries
 				&Class{NAME_KIND_RATE, NAME_STAGE_OLD},   // rates
 			})
 	case "R":
-		// Rate eqn.
+		// Rate eqn.:  R.KL = {C, A.K, L.K, R.JK}
 		res = check(
 			&Class{NAME_KIND_RATE, NAME_STAGE_NEW},
 			[]*Class{
 				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
 				&Class{NAME_KIND_LEVEL, NAME_STAGE_NEW},  // levels
-				&Class{NAME_KIND_AUX, NAME_STAGE_NEW},    // aux
-				&Class{NAME_KIND_RATE, NAME_STAGE_OLD},   // other rates
+				&Class{NAME_KIND_AUX, NAME_STAGE_NEW},    // auxilliaries
+				&Class{NAME_KIND_RATE, NAME_STAGE_OLD},   // rates
 			})
 		if !res.Ok {
 			Msgf("   WARN: %s\n", res.Err.Error())
 			res = Success()
 		}
 	case "A":
-		// Auxilliary eqn.
+		// Auxilliary eqn.:  A.K={C, A.K, L.K, R.JK}
 		res = check(
 			&Class{NAME_KIND_AUX, NAME_STAGE_NEW},
 			[]*Class{
 				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
-				&Class{NAME_KIND_INIT, NAME_STAGE_NONE},  // initializers
-				&Class{NAME_KIND_AUX, NAME_STAGE_NEW},    // other auxilieries
+				&Class{NAME_KIND_AUX, NAME_STAGE_NEW},    // auxilliaries
 				&Class{NAME_KIND_LEVEL, NAME_STAGE_NEW},  // levels
-				&Class{NAME_KIND_RATE, NAME_STAGE_NEW},   // rates
+				&Class{NAME_KIND_RATE, NAME_STAGE_OLD},   // rates
 			})
 	case "S":
-		// Supplementary eqn.
+		// Supplementary eqn.:  S.K = [C, S.K, L.K, A.K, R.JK}
 		res = check(
 			&Class{NAME_KIND_SUPPL, NAME_STAGE_NEW},
 			[]*Class{
 				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
 				&Class{NAME_KIND_AUX, NAME_STAGE_NEW},    // auxilieries
 				&Class{NAME_KIND_LEVEL, NAME_STAGE_NEW},  // levels
-				&Class{NAME_KIND_RATE, NAME_STAGE_NEW},   // rates
+				&Class{NAME_KIND_SUPPL, NAME_STAGE_NEW},  // supplements
+				&Class{NAME_KIND_RATE, NAME_STAGE_OLD},   // rates
 			})
 	}
 	return
