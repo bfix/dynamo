@@ -70,6 +70,54 @@ func (el *EqnList) Replace(eqn *Equation) {
 	}
 }
 
+// Dependents return a list of equations that depend on a given variable.
+func (el *EqnList) Dependent(name string) *EqnList {
+	res := NewEqnList()
+loop:
+	for _, eqn := range el.eqns {
+		for _, dep := range eqn.Dependencies {
+			if dep.Name == name {
+				res.Add(eqn)
+				continue loop
+			}
+		}
+	}
+	return res
+}
+
+// Add an equation to the list.
+func (el *EqnList) Add(eqn *Equation) {
+	el.eqns = append(el.eqns, eqn)
+}
+
+// AddList appends an equation list.
+func (el *EqnList) AddList(list *EqnList) {
+	for _, eqn := range list.eqns {
+		el.eqns = append(el.eqns, eqn)
+	}
+}
+
+// List returns iterable equations.
+func (el *EqnList) List() []*Equation {
+	return el.eqns
+}
+
+// Split equation list into two at given position.
+func (el *EqnList) Split(pos int) (*EqnList, *EqnList) {
+	lower := &EqnList{
+		eqns: el.eqns[:pos],
+	}
+	upper := &EqnList{
+		eqns: el.eqns[pos:],
+	}
+	return lower, upper
+}
+
+// Len returns the length of the equation list
+func (el *EqnList) Len() int {
+	return len(el.eqns)
+}
+
 // Dump logs the current equation list in human-readable form into
 // the log stream.
 func (el *EqnList) Dump(verbose bool) {
@@ -106,39 +154,6 @@ func (el *EqnList) Dump(verbose bool) {
 			}
 		}
 	}
-}
-
-// Add an equation to the list.
-func (el *EqnList) Add(eqn *Equation) {
-	el.eqns = append(el.eqns, eqn)
-}
-
-// AddList appends an equation list.
-func (el *EqnList) AddList(list *EqnList) {
-	for _, eqn := range list.eqns {
-		el.eqns = append(el.eqns, eqn)
-	}
-}
-
-// List returns iterable equations.
-func (el *EqnList) List() []*Equation {
-	return el.eqns
-}
-
-// Split equation list into two at given position.
-func (el *EqnList) Split(pos int) (*EqnList, *EqnList) {
-	lower := &EqnList{
-		eqns: el.eqns[:pos],
-	}
-	upper := &EqnList{
-		eqns: el.eqns[pos:],
-	}
-	return lower, upper
-}
-
-// Len returns the length of the equation list
-func (el *EqnList) Len() int {
-	return len(el.eqns)
 }
 
 //----------------------------------------------------------------------
