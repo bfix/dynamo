@@ -70,6 +70,25 @@ func (el *EqnList) Replace(eqn *Equation) {
 	}
 }
 
+// Find a defining equation for given quantity
+func (el *EqnList) Find(name string) *Equation {
+	var list []*Equation
+	for _, e := range el.eqns {
+		if e.Target.Name == name {
+			list = append(list, e)
+		}
+	}
+	if len(list) == 0 {
+		return nil
+	}
+	for _, e := range list {
+		if e.Mode == "N" {
+			return e
+		}
+	}
+	return list[0]
+}
+
 // Dependents return a list of equations that depend on a given variable.
 func (el *EqnList) Dependent(name string) *EqnList {
 	res := NewEqnList()
