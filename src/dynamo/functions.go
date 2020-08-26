@@ -729,6 +729,26 @@ func NewTable(list []string) (tbl *Table, res *Result) {
 	return
 }
 
+// Newton polynominal interpolation that relies on 'divided differences'.
+// 'x' is normalized [0,1]; points are equidistant with given step size.
+func (tbl *Table) Newton(x Variable) Variable {
+	num := len(tbl.A_j)
+	step := 1.0 / float64(num-1)
+	n_j := func(x Variable, j int) (y float64) {
+		y = 1.0
+		for i := 0; i < j; i++ {
+			y *= (float64(x) - float64(i)*step)
+		}
+		return
+	}
+	// polynominal interpolation
+	y := 0.0
+	for j := 0; j < num; j++ {
+		y += tbl.A_j[j] * n_j(x, j)
+	}
+	return Variable(y)
+}
+
 //======================================================================
 // Implementation of Dynamo functions
 //======================================================================
@@ -791,9 +811,9 @@ func table(args []string, mdl *Model, mode int) (val Variable, res *Result) {
 		return
 	}
 	// get inter-/extrapolation parameters
-	pos := float64(n * (x - min) / (max - min))
-	idx := int(pos)
-	frac := pos - float64(idx)
+	pos := n * (x - min) / (max - min)
+	idx := int(pos.Floor())
+	frac := pos - Variable(idx)
 	Dbg.Msgf("TABLE: x=%f, pos=%f, idx=%d, frac=%f\n", x, pos, idx, frac)
 
 	// check for "HL" argument
@@ -805,7 +825,7 @@ func table(args []string, mdl *Model, mode int) (val Variable, res *Result) {
 		}
 		// range check
 		if hl.Compare(0) != 0 {
-			outside := (compare(pos, 0) < 0) || (compare(pos, float64(n)) > 0)
+			outside := (pos.Compare(0) < 0) || (pos.Compare(n) > 0)
 			if outside && hl.Compare(0) > 0 {
 				Msgf("WARN: Leaving table range '%s'...\n", args[0])
 				mdl.Current[args[5]] = -1.0
@@ -819,46 +839,26 @@ func table(args []string, mdl *Model, mode int) (val Variable, res *Result) {
 	// process table depending on mode
 	if mode == 2 {
 		// polynominal interpolation
-		val = Variable(newton(pos, tbl.A_j))
+		val = tbl.Newton(pos / n)
 	} else {
 		// linear inter-/extrapolation
 		if idx < 0 {
 			if mode == 0 {
 				val = Variable(tbl.Data[0])
 			} else {
-				val = Variable((tbl.Data[1]-tbl.Data[0])/float64(step)*pos + tbl.Data[0])
+				val = Variable(tbl.Data[1]-tbl.Data[0])*pos + Variable(tbl.Data[0])
 			}
 		} else if idx > len(tbl.Data)-2 {
 			last := len(tbl.Data) - 1
 			if mode == 0 {
 				val = Variable(tbl.Data[last])
 			} else {
-				val = Variable((tbl.Data[last]-tbl.Data[last-1])/float64(step)*(pos-1) + tbl.Data[last])
+				val = Variable(tbl.Data[last]-tbl.Data[last-1])*(pos-n) + Variable(tbl.Data[last])
 			}
 		} else {
-			val = Variable(tbl.Data[idx] + (tbl.Data[idx+1]-tbl.Data[idx])*frac)
+			val = Variable(tbl.Data[idx+1]-tbl.Data[idx])*frac + Variable(tbl.Data[idx])
 		}
 	}
 	res = Success()
 	return
-}
-
-// Newton polynominal interpolation that relies on 'divided differences'.
-// 'x' is normalized [0,1]; points are equidistant with given step size.
-func newton(x float64, a_j []float64) float64 {
-	num := len(a_j)
-	step := 1.0 / float64(num-1)
-	n_j := func(x float64, j int) float64 {
-		y := 1.0
-		for i := 0; i < j; i++ {
-			y *= (x - float64(i)*step)
-		}
-		return y
-	}
-	// polynominal interpolation
-	y := 0.0
-	for j := 0; j < num; j++ {
-		y += a_j[j] * n_j(x, j)
-	}
-	return y
 }
