@@ -46,6 +46,15 @@ var (
 // State is a collection of named variables
 type State map[string]Variable
 
+// Clone state.
+func (s State) Clone() State {
+	clone := make(State)
+	for level, val := range s {
+		clone[level] = val
+	}
+	return clone
+}
+
 //----------------------------------------------------------------------
 // MODEL as defined in a DYNAMO source
 //
@@ -423,11 +432,43 @@ func (mdl *Model) Run() (res *Result) {
 	setDef("PRTPER", 0)
 	setDef("PLTPER", 0)
 
+	// try to execute run-time equations that only depend on
+	// variabes we already know.
+loop:
+	for _, eqn := range runEqns.eqns {
+		// skip equation that overwrites an existing value
+		if _, ok := mdl.Current[eqn.Target.Name]; ok {
+			continue
+		}
+		// check if dependencies are available
+		for _, name := range eqn.Dependencies {
+			if _, ok := mdl.Current[name.Name]; !ok {
+				// missing dependency
+				continue loop
+			}
+		}
+		// check if references are available
+		for _, name := range eqn.References {
+			if _, ok := mdl.Current[name.Name]; !ok {
+				// missing reference
+				continue loop
+			}
+		}
+		// evaluate equation
+		if res = eqn.Eval(mdl); !res.Ok {
+			Dbg.Msgf("Failed runtime eqn in init: %s\n", eqn.String())
+		}
+	}
+
+	//------------------------------------------------------------------
+	// Checking state:
+	//------------------------------------------------------------------
+	Msg("      Checking state...")
+
 	// keep a list of a variables (level,rate)
 	varList := make([]string, 0)
 
 	// Check if all levels have level equations
-	Msg("      Checking state...")
 	check := make(map[string]bool)
 	used := make(map[string]bool)
 	ok := true
@@ -490,6 +531,10 @@ func (mdl *Model) Run() (res *Result) {
 		return
 	}
 
+	//------------------------------------------------------------------
+	// Running the model
+	//------------------------------------------------------------------
+
 	// Running the model
 	Msg("      Iterating epochs...")
 	dt := mdl.Current["DT"]
@@ -513,11 +558,7 @@ func (mdl *Model) Run() (res *Result) {
 			break
 		}
 		// propagate state
-		mdl.Last = mdl.Current
-		mdl.Current = make(State)
-		for level, val := range mdl.Last {
-			mdl.Current[level] = val
-		}
+		mdl.Last = mdl.Current.Clone()
 		// compute new levels
 		if res = compute("L", runEqns); !res.Ok {
 			break
