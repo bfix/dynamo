@@ -242,23 +242,51 @@ func (eqn *Equation) Eval(mdl *Model) (res *Result) {
 	var val Variable
 	Dbg.Msgf("----------------------------\n")
 	Dbg.Msgf("Evaluating: %s\n", eqn.String())
-	if val, res = eval(eqn.Formula, mdl); res.Ok {
+	missing := make(map[string]*Name)
+	if val, res = eval(eqn.Formula, mdl, missing); res.Ok {
 		res = mdl.Set(eqn.Target, val)
+
+		// if we have missing variables, check the terminal equations
+		// that use this equation
+		if len(missing) > 0 {
+			targets := make(map[string]*Equation)
+			targets[eqn.Target.Name] = eqn
+			maxDepth := mdl.Eqns.Len()
+			for depth := 0; depth < maxDepth && len(targets) > 0; depth++ {
+				nextTargets := make(map[string]*Equation)
+				for name := range targets {
+					list := mdl.Eqns.Dependent(name)
+					for _, e := range list.eqns {
+						if e.Mode != "S" {
+							nextTargets[e.Target.Name] = e
+						}
+					}
+				}
+				targets = nextTargets
+			}
+			// if not all terminal equations are supplementary,
+			// give warnings for missing variables.
+			if len(targets) > 0 {
+				for _, name := range missing {
+					Msgf("WARN: Missing variable %s", name)
+				}
+			}
+		}
 	}
 	return
 }
 
 // recursively evaluate the equation for a given model state
-func eval(expr ast.Expr, mdl *Model) (val Variable, res *Result) {
+func eval(expr ast.Expr, mdl *Model, missing map[string]*Name) (val Variable, res *Result) {
 	res = Success()
 
 	switch x := expr.(type) {
 	case *ast.BinaryExpr:
 		var left, right Variable
-		if left, res = eval(x.X, mdl); !res.Ok {
+		if left, res = eval(x.X, mdl, missing); !res.Ok {
 			break
 		}
-		if right, res = eval(x.Y, mdl); !res.Ok {
+		if right, res = eval(x.Y, mdl, missing); !res.Ok {
 			break
 		}
 		switch x.Op {
@@ -276,7 +304,7 @@ func eval(expr ast.Expr, mdl *Model) (val Variable, res *Result) {
 		return
 
 	case *ast.ParenExpr:
-		val, res = eval(x.X, mdl)
+		val, res = eval(x.X, mdl, missing)
 
 	case *ast.BasicLit:
 		v, err := strconv.ParseFloat(x.Value, 64)
@@ -291,7 +319,7 @@ func eval(expr ast.Expr, mdl *Model) (val Variable, res *Result) {
 			break
 		}
 		if val, res = mdl.Get(name); !res.Ok {
-			Msgf("WARN: %s", res.Err.Error())
+			missing[name.Name] = name
 			val = 0
 			res = Success()
 		}
@@ -321,17 +349,17 @@ func eval(expr ast.Expr, mdl *Model) (val Variable, res *Result) {
 			case *ast.BasicLit:
 				args[i] = x.Value
 			case *ast.BinaryExpr:
-				if val, res = eval(x, mdl); !res.Ok {
+				if val, res = eval(x, mdl, missing); !res.Ok {
 					return
 				}
 				args[i] = val.String()
 			case *ast.ParenExpr:
-				if val, res = eval(x, mdl); !res.Ok {
+				if val, res = eval(x, mdl, missing); !res.Ok {
 					return
 				}
 				args[i] = val.String()
 			case *ast.UnaryExpr:
-				if val, res = eval(x.X, mdl); !res.Ok {
+				if val, res = eval(x.X, mdl, missing); !res.Ok {
 					break
 				}
 				switch x.Op {
@@ -349,7 +377,7 @@ func eval(expr ast.Expr, mdl *Model) (val Variable, res *Result) {
 		val, res = CallFunction(name.Name, args, mdl)
 
 	case *ast.UnaryExpr:
-		if val, res = eval(x.X, mdl); !res.Ok {
+		if val, res = eval(x.X, mdl, missing); !res.Ok {
 			break
 		}
 		switch x.Op {
