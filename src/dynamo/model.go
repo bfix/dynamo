@@ -364,6 +364,15 @@ func (mdl *Model) IsSystem(name string) bool {
 	return false
 }
 
+// Initial returns an initial value for a quantity as calculated by the model.
+func (mdl *Model) Initial(name string) (val Variable, res *Result) {
+	// find equation for quantity
+	if eqn := mdl.Eqns.Find(name); eqn != nil {
+		return eqn.Eval(mdl)
+	}
+	return 0, Failure(ErrModelNoInitial+": %s", name)
+}
+
 //----------------------------------------------------------------------
 // DYNAMO model runtime
 //----------------------------------------------------------------------
@@ -389,7 +398,7 @@ func (mdl *Model) Run() (res *Result) {
 		res = Success()
 		for _, eqn := range eqns.List() {
 			if strings.Contains(modes, eqn.Mode) {
-				if res = eqn.Eval(mdl); !res.Ok {
+				if _, res = eqn.Eval(mdl); !res.Ok {
 					Dbg.Msg(eqn.String())
 					break
 				}
@@ -455,7 +464,7 @@ loop:
 			}
 		}
 		// evaluate equation
-		if res = eqn.Eval(mdl); !res.Ok {
+		if _, res = eqn.Eval(mdl); !res.Ok {
 			Dbg.Msgf("Failed runtime eqn in init: %s\n", eqn.String())
 		}
 	}
