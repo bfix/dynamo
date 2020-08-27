@@ -274,7 +274,7 @@ func init() {
 		//--------------------------------------------------------------
 		"TABLE": &Function{
 			NumArgs:  5,
-			NumVars:  0,
+			NumVars:  1,
 			DepModes: []int{DEP_NORMAL, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL},
 			Check:    nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
@@ -283,7 +283,7 @@ func init() {
 		},
 		"TABHL": &Function{
 			NumArgs:  5,
-			NumVars:  1,
+			NumVars:  0,
 			DepModes: []int{DEP_NORMAL, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL},
 			Check:    nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
@@ -292,7 +292,7 @@ func init() {
 		},
 		"TABXT": &Function{
 			NumArgs:  5,
-			NumVars:  0,
+			NumVars:  1,
 			DepModes: []int{DEP_NORMAL, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL},
 			Check:    nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
@@ -301,7 +301,7 @@ func init() {
 		},
 		"TABPL": &Function{
 			NumArgs:  5,
-			NumVars:  0,
+			NumVars:  1,
 			DepModes: []int{DEP_NORMAL, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL},
 			Check:    nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
@@ -816,48 +816,63 @@ func table(args []string, mdl *Model, mode int) (val Variable, res *Result) {
 	frac := pos - Variable(idx)
 	Dbg.Msgf("TABLE: x=%f, pos=%f, idx=%d, frac=%f\n", x, pos, idx, frac)
 
-	// check for "HL" argument
+	// check for "range check" argument
+	below := (pos.Compare(0) < 0)
+	above := (pos.Compare(n) >= 0)
+	state := 0
 	if len(args) == 6 {
-		hl, ok := mdl.Current[args[5]]
-		if !ok {
-			hl = 1.0
-			mdl.Current[args[5]] = hl
+		if region, ok := mdl.Current[args[5]]; ok {
+			state = int(region)
+		} else {
+			// start with "inside" status
+			state = 0
+			mdl.Current[args[5]] = 0
 		}
 		// range check
-		if hl.Compare(0) != 0 {
-			outside := (pos.Compare(0) < 0) || (pos.Compare(n) > 0)
-			if outside && hl.Compare(0) > 0 {
-				Msgf("WARN: Leaving table range '%s'...\n", args[0])
-				mdl.Current[args[5]] = -1.0
-			} else if !outside && hl.Compare(0) < 0 {
-				Msgf("WARN: Entering table range '%s'...\n", args[0])
-				mdl.Current[args[5]] = 1.0
+		if (below || above) && state != -1 {
+			to := "below"
+			state = -1
+			if above {
+				to = "above"
+				state = 1
 			}
+			Msgf("WARN: Leaving table range '%s' to %s...\n", args[0], to)
+		} else if !(below || above) && state != 0 {
+			from := "below"
+			if state == 1 {
+				from = "above"
+			}
+			state = 0
+			Msgf("WARN: Entering table range '%s'from %s...\n", args[0], from)
 		}
+		mdl.Current[args[5]] = Variable(state)
 	}
-
-	// process table depending on mode
-	if mode == 2 {
-		// polynominal interpolation
+	// handle region (below, inside, above) of position relative to table data.
+	if below {
+		// outside left
+		if mode == 1 {
+			// linear extrapolation
+			val = Variable(tbl.Data[1]-tbl.Data[0])*pos + Variable(tbl.Data[0])
+		} else {
+			// first table value
+			val = Variable(tbl.Data[0])
+		}
+	} else if above {
+		// outside right
+		last := len(tbl.Data) - 1
+		if mode == 1 {
+			// linear extrapolation
+			val = Variable(tbl.Data[last]-tbl.Data[last-1])*(pos-n) + Variable(tbl.Data[last])
+		} else {
+			// last table value
+			val = Variable(tbl.Data[last])
+		}
+	} else if mode == 2 {
+		// inside TABPL: polynominal approximation
 		val = tbl.Newton(pos / n)
 	} else {
-		// linear inter-/extrapolation
-		if idx < 0 {
-			if mode == 0 {
-				val = Variable(tbl.Data[0])
-			} else {
-				val = Variable(tbl.Data[1]-tbl.Data[0])*pos + Variable(tbl.Data[0])
-			}
-		} else if idx > len(tbl.Data)-2 {
-			last := len(tbl.Data) - 1
-			if mode == 0 {
-				val = Variable(tbl.Data[last])
-			} else {
-				val = Variable(tbl.Data[last]-tbl.Data[last-1])*(pos-n) + Variable(tbl.Data[last])
-			}
-		} else {
-			val = Variable(tbl.Data[idx+1]-tbl.Data[idx])*frac + Variable(tbl.Data[idx])
-		}
+		// inside TABLE,TABHL,TABXT: linear interpolation
+		val = Variable(tbl.Data[idx+1]-tbl.Data[idx])*frac + Variable(tbl.Data[idx])
 	}
 	res = Success()
 	return
