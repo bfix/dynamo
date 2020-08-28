@@ -427,11 +427,9 @@ func (el *EqnList) validateEqn(mdl *Model, eqn *Equation, list map[string]*Equat
 		// Constant eqn.:  C=<number>
 		res = check(
 			&Class{NAME_KIND_CONST, NAME_STAGE_NONE},
-			[]*Class{
-				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // other constants
-			})
+			[]*Class{})
 	case "N":
-		// Initializer eqn.:  N={C, N}; can be used on levels, aux ad rates
+		// Initializer eqn.:  N={C, N}; can be used on levels, aux and rates
 		res = check(
 			&Class{NAME_KIND_INIT, NAME_STAGE_NONE},
 			[]*Class{
@@ -448,6 +446,7 @@ func (el *EqnList) validateEqn(mdl *Model, eqn *Equation, list map[string]*Equat
 			&Class{NAME_KIND_LEVEL, NAME_STAGE_NEW},
 			[]*Class{
 				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
+				&Class{NAME_KIND_INIT, NAME_STAGE_NONE},  // initializers
 				&Class{NAME_KIND_LEVEL, NAME_STAGE_OLD},  // levels
 				&Class{NAME_KIND_AUX, NAME_STAGE_OLD},    // auxilliaries
 				&Class{NAME_KIND_RATE, NAME_STAGE_OLD},   // rates
@@ -458,6 +457,7 @@ func (el *EqnList) validateEqn(mdl *Model, eqn *Equation, list map[string]*Equat
 			&Class{NAME_KIND_RATE, NAME_STAGE_NEW},
 			[]*Class{
 				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
+				&Class{NAME_KIND_INIT, NAME_STAGE_NONE},  // initializers
 				&Class{NAME_KIND_LEVEL, NAME_STAGE_NEW},  // levels
 				&Class{NAME_KIND_AUX, NAME_STAGE_NEW},    // auxilliaries
 				&Class{NAME_KIND_RATE, NAME_STAGE_OLD},   // rates
@@ -472,6 +472,7 @@ func (el *EqnList) validateEqn(mdl *Model, eqn *Equation, list map[string]*Equat
 			&Class{NAME_KIND_AUX, NAME_STAGE_NEW},
 			[]*Class{
 				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
+				&Class{NAME_KIND_INIT, NAME_STAGE_NONE},  // initializers
 				&Class{NAME_KIND_AUX, NAME_STAGE_NEW},    // auxilliaries
 				&Class{NAME_KIND_LEVEL, NAME_STAGE_NEW},  // levels
 				&Class{NAME_KIND_RATE, NAME_STAGE_OLD},   // rates
@@ -482,6 +483,7 @@ func (el *EqnList) validateEqn(mdl *Model, eqn *Equation, list map[string]*Equat
 			&Class{NAME_KIND_SUPPL, NAME_STAGE_NEW},
 			[]*Class{
 				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
+				&Class{NAME_KIND_INIT, NAME_STAGE_NONE},  // initializers
 				&Class{NAME_KIND_AUX, NAME_STAGE_NEW},    // auxilieries
 				&Class{NAME_KIND_LEVEL, NAME_STAGE_NEW},  // levels
 				&Class{NAME_KIND_SUPPL, NAME_STAGE_NEW},  // supplements
