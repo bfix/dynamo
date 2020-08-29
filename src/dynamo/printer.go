@@ -55,9 +55,12 @@ func NewPrintVar(name string) *PrintVar {
 
 // Calculate optimal scale of data series
 func (pv *PrintVar) calcScale() {
-	x := int(math.Round(math.Log10(math.Max(math.Abs(pv.Max), math.Abs(pv.Min))))) - 2
-	if x > 0 {
-		pv.Scale = math.Pow10(x)
+	max := math.Max(math.Abs(pv.Max), math.Abs(pv.Min))
+	if max > 0 {
+		x := int(math.Round(math.Log10(max))) - 2
+		if x > 0 {
+			pv.Scale = math.Pow10(x)
+		}
 	}
 }
 
@@ -290,7 +293,7 @@ func (prt *Printer) Add(epoch int) (res *Result) {
 	res = Success()
 	if prt.file != nil {
 		// check for output epoch
-		if prt.steps > 1 && epoch%prt.steps != 1 {
+		if prt.steps == 0 || (prt.steps > 1 && epoch%prt.steps != 1) {
 			return
 		}
 		// get values for printed variables
@@ -314,14 +317,16 @@ func (prt *Printer) Add(epoch int) (res *Result) {
 func (prt *Printer) print() *Result {
 	Msgf("      Generating print(s)...")
 	// handle all print jobs
-	for _, pj := range prt.jobs {
-		switch prt.mode {
-		case PRT_DYNAMO:
-			return prt.print_dyn(pj)
-		case PRT_CSV:
-			return prt.print_csv(pj)
-		default:
-			return Failure(ErrPrintMode)
+	if prt.steps > 0 {
+		for _, pj := range prt.jobs {
+			switch prt.mode {
+			case PRT_DYNAMO:
+				return prt.print_dyn(pj)
+			case PRT_CSV:
+				return prt.print_csv(pj)
+			default:
+				return Failure(ErrPrintMode)
+			}
 		}
 	}
 	return Success()
