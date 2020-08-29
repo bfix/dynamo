@@ -279,7 +279,9 @@ func (mdl *Model) AddStatement(stmt *Line) (res *Result) {
 		if res = mdl.Run(); res.Ok {
 			res = mdl.Output()
 			// Stack model equations for later use
+			Msgf("      Stacking system model '%s'...", mdl.RunID)
 			mdl.Stack[mdl.RunID] = mdl.Eqns.Clone()
+			mdl.Eqns = nil
 		}
 		Msg("      Done.")
 
@@ -292,8 +294,8 @@ func (mdl *Model) AddStatement(stmt *Line) (res *Result) {
 			res = Failure(ErrModelNotAvailable+": %s", stmt.Stmt)
 			break
 		}
-		Msgf("   Editing system model '%s':", mdl.RunID)
-		mdl.Eqns = eqns
+		Msgf("   Editing system model '%s':", stmt.Stmt)
+		mdl.Eqns = eqns.Clone()
 		mdl.Edit = true
 		// reset output
 		mdl.Print.Reset()
@@ -554,7 +556,8 @@ loop:
 		mdl.Current["TIME"] = time
 	}
 
-	for epoch, t := 1, time; t <= length; epoch, t = epoch+1, t+dt {
+	epoch := 1
+	for t := time; t <= length; epoch, t = epoch+1, t+dt {
 		// compute auxiliaries, rates and supplements
 		if res = compute("ARS", runEqns); !res.Ok {
 			break
@@ -576,5 +579,6 @@ loop:
 			break
 		}
 	}
+	Msgf("         %d epochs computed.", epoch-1)
 	return
 }
