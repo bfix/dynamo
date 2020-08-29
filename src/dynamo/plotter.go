@@ -432,6 +432,7 @@ func (plt *Plotter) plot_dyn(pj *PlotJob) *Result {
 	// draw graph
 	for x, i := plt.x0, 0; i < plt.xnum; x, i = x+plt.dx, i+1 {
 		line := []rune(mkLine(x, i))
+		overlap := make(map[int]string)
 		for _, grp := range pj.grps {
 			for _, v := range grp.Vars {
 				pv := plt.vars[v]
@@ -440,10 +441,21 @@ func (plt *Plotter) plot_dyn(pj *PlotJob) *Result {
 					Msgf("y=%f, range=(%f,%f)\n", pv.Values[i], grp.Min, grp.Max)
 					continue
 				}
-				line[pos] = pv.Sym
+				if _, ok := overlap[pos]; ok {
+					overlap[pos] += string(pv.Sym)
+				} else {
+					line[pos] = pv.Sym
+					overlap[pos] = string(pv.Sym)
+				}
 			}
 		}
-		fmt.Fprintln(plt.file, string(line))
+		olMap := ""
+		for _, ol := range overlap {
+			if len(ol) > 1 {
+				olMap += " " + ol
+			}
+		}
+		fmt.Fprintln(plt.file, string(line)+olMap)
 	}
 	return Success()
 }
