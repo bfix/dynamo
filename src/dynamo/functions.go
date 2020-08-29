@@ -324,11 +324,8 @@ func init() {
 				if !res.Ok {
 					return res
 				}
-				if n.Kind != NAME_KIND_RATE {
-					return Failure(ErrModelFunction+": DELAY1 --  %s not a rate", n.String())
-				}
-				if n.Stage != NAME_STAGE_OLD {
-					return Failure(ErrModelFunction+": DELAY1 --  %s%s not old", n.Name, n.GetIndex())
+				if n.Kind != NAME_KIND_RATE && n.Kind != NAME_KIND_LEVEL {
+					return Failure(ErrModelFunction+": DELAY1 --  %s not a rate or level", n.String())
 				}
 				return Success()
 			},
@@ -372,10 +369,10 @@ func init() {
 				}
 				// get old internal state
 				if l1, res = resolve(args[2], mdl); !res.Ok {
-					return
+					l1 = a * b
 				}
 				if r1, res = resolve(args[3], mdl); !res.Ok {
-					return
+					r1 = a
 				}
 				// compute new internal state
 				l1 += dt * (a - r1)
