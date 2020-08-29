@@ -368,7 +368,8 @@ func (plt *Plotter) plot() (res *Result) {
 		case PLT_DYNAMO:
 			res = plt.plot_dyn(pj)
 		case PLT_GNUPLOT:
-			res = plt.plot_gnu(pj, plt.processed)
+			title := fmt.Sprintf("%s (%s)", plt.mdl.RunID, plt.mdl.Title)
+			res = plt.plot_gnu(pj, plt.processed, title)
 		default:
 			res = Failure(ErrPlotMode)
 		}
@@ -448,7 +449,7 @@ func (plt *Plotter) plot_dyn(pj *PlotJob) *Result {
 }
 
 // Generate GNUplot script for output
-func (plt *Plotter) plot_gnu(pj *PlotJob, num int) *Result {
+func (plt *Plotter) plot_gnu(pj *PlotJob, num int, title string) *Result {
 
 	// assemble y-tics (multiple scales; one per plot group)
 	ytics := make([]string, 5)
@@ -489,6 +490,7 @@ func (plt *Plotter) plot_gnu(pj *PlotJob, num int) *Result {
 	if scales < 2 {
 		offset = 0.1
 	}
+	fmt.Fprintf(plt.file, "set title \"%s\"\n", title)
 	fmt.Fprintf(plt.file, "set lmargin screen %f\n", offset)
 	fmt.Fprintf(plt.file, "set xrange [%f:%f]\n", plt.x0, plt.x0+plt.dx*float64(plt.xnum-1))
 	fmt.Fprintf(plt.file, "set ytics rotate by 90 offset -%f (", scales+1)
