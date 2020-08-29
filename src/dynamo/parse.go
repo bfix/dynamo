@@ -88,6 +88,8 @@ func (mdl *Model) Parse(rdr io.Reader) (res *Result) {
 				if pos := strings.Index(line, " "); pos != -1 {
 					comment = strings.TrimSpace(line[pos:])
 					line = line[:pos]
+				} else {
+					comment = ""
 				}
 			}
 		} else {
