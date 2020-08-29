@@ -14,12 +14,12 @@ Richardson and Alexander L. Pugh III, The MIT Press, 1981 (ISBN
 <table>
 <tr>
 <td align="right" width="30%">
-  <img src="flu/flu_(1).svg" alt="flu.dynamo graph (simple)" />
+  <img src="flu_(1).svg" alt="flu.dynamo graph (simple)" />
   <p>Simple epidemic model (Page 96, Figure 3.7)</p>
 </td>
 <td width="10px"/>
 <td align="left" width="30%">
-  <img src="flu/flu_(2).svg" alt="flu.dynamo graph (delay)" />
+  <img src="flu_(2).svg" alt="flu.dynamo graph (delay)" />
   <p>Improved epidemic model with incubation (Page 104, Figure 3.4)</p>
 </td>
 </tr>
@@ -42,7 +42,7 @@ were executed for 100 epochs (101 iterations):
 Run with `TEST1=1` (Page 125, Figure 3.26) to enable the `STEP` function.
 
 <p align="center">
-  <img src="inventory/inv-1.svg" alt="inv-1.dynamo graph" />
+  <img src="inventory_(1).svg" alt="inv-1.dynamo graph" />
 </p>
 </td>
 <td width="30%">
@@ -52,7 +52,7 @@ Run with `TEST1=1` (Page 125, Figure 3.26) to enable the `STEP` function.
 Run with `TEST2=1` (Page 126, Figure 3.27) to enable the `RAMP` function.
 
 <p align="center">
-  <img src="inventory/inv-2.svg" alt="inv-2.dynamo graph" />
+  <img src="inventory_(2).svg" alt="inv-2.dynamo graph" />
 </p>
 </td>
 </tr>
@@ -64,7 +64,7 @@ Run with `TEST2=1` (Page 126, Figure 3.27) to enable the `RAMP` function.
 Run with `TEST3=1` and `INTVL=200` (Page 128, Figure 3.28) to enable the `PULSE` function.
 
 <p align="center">
-  <img src="inventory/inv-3.svg" alt="inv-3.dynamo graph" />
+  <img src="inventory_(3).svg" alt="inv-3.dynamo graph" />
 </p>
 </td>
 <td width="30%">
@@ -74,7 +74,7 @@ Run with `TEST3=1` and `INTVL=200` (Page 128, Figure 3.28) to enable the `PULSE`
 Run with `TEST3=1` and `INTVL=5` (Page 129, Figure 3.29) to enable the `PULSE` function.
 
 <p align="center">
-  <img src="inventory/inv-4.svg" alt="inv-4.dynamo graph" />
+  <img src="inventory_(4).svg" alt="inv-4.dynamo graph" />
 </p>
 </td>
 </tr>
@@ -86,7 +86,7 @@ Run with `TEST3=1` and `INTVL=5` (Page 129, Figure 3.29) to enable the `PULSE` f
 Run with `TEST4=1` and `PER=5` (Page 130, Figure 3.30) to enable the `SIN` function.
 
 <p align="center">
-  <img src="inventory/inv-5.svg" alt="inv-5.dynamo graph" />
+  <img src="inventory_(5).svg" alt="inv-5.dynamo graph" />
 </p>
 </td>
 <td width="30%">
@@ -96,7 +96,7 @@ Run with `TEST4=1` and `PER=5` (Page 130, Figure 3.30) to enable the `SIN` funct
 Run with `TEST4=1` and `PER=10` (Page 131, Figure 3.31) to enable the `SIN` function.
 
 <p align="center">
-  <img src="inventory/inv-6.svg" alt="inv-6.dynamo graph" />
+  <img src="inventory_(6).svg" alt="inv-6.dynamo graph" />
 </p>
 </td>
 </tr>
@@ -111,7 +111,7 @@ N.B.: The graph is slightly different from the book,as `NOISE` involves
 randomness; re-running the model would also generate a different graph.
 
 <p align="center">
-  <img src="inventory/inv-7.svg" alt="inv-7.dynamo graph" />
+  <img src="inventory_(7).svg" alt="inv-7.dynamo graph" />
 </p>
 </td>
 <td/>
