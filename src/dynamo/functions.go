@@ -226,12 +226,15 @@ func init() {
 			DepModes: []int{DEP_NORMAL, DEP_NORMAL},
 			Check:    nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
-				if val, res = CallFunction("STEP", args, mdl); res.Ok {
-					lvl := args[len(args)-1]
-					dt := mdl.Current["DT"]
-					v, _ := mdl.Last[lvl]
-					val = v + dt*val
-					mdl.Current[lvl] = val
+				var a, b Variable
+				if a, res = resolve(args[0], mdl); res.Ok {
+					if b, res = resolve(args[1], mdl); res.Ok {
+						if time, ok := mdl.Current["TIME"]; ok {
+							if time.Compare(b) >= 0 {
+								val = a * (time - b)
+							}
+						}
+					}
 				}
 				return
 			},
@@ -496,11 +499,10 @@ func init() {
 				if !res.Ok {
 					return res
 				}
-				if n.Kind != NAME_KIND_LEVEL {
-					return Failure(ErrModelFunction+": SMOOTH --  %s not a level", n.String())
-				}
-				if n.Stage != NAME_STAGE_NEW {
-					return Failure(ErrModelFunction+": SMOOTH --  %s%s not new", n.Name, n.GetIndex())
+				if n.Kind != NAME_KIND_LEVEL &&
+					n.Kind != NAME_KIND_RATE &&
+					n.Kind != NAME_KIND_AUX {
+					return Failure(ErrModelFunction+": SMOOTH --  %s not a level, rate or aux", n.String())
 				}
 				return Success()
 			},
