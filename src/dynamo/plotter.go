@@ -437,6 +437,7 @@ func (plt *Plotter) plot_dyn(pj *PlotJob) *Result {
 				pos := int(math.Round(100*grp.Norm(pv.Values[i]))) + 10
 				if pos < 10 || pos > 110 {
 					Msgf("y=%f, range=(%f,%f)\n", pv.Values[i], grp.Min, grp.Max)
+					continue
 				}
 				line[pos] = pv.Sym
 			}
@@ -503,10 +504,15 @@ func (plt *Plotter) plot_gnu(pj *PlotJob, num int) *Result {
 	fmt.Fprintf(plt.file, "set output \"%s_(%d).svg\"\n", plt.base, num)
 	fmt.Fprintf(plt.file, "plot ")
 	for i, label := range list {
+		mode := fmt.Sprintf("with line ls %d", (i%6)+1)
+		pv := plt.vars[label]
+		if strings.Index("*#", string(pv.Sym)) != -1 {
+			mode = "with point"
+		}
 		if i > 0 {
 			plt.file.WriteString(",")
 		}
-		fmt.Fprintf(plt.file, "$data_%d using 1:%d with line ls %d title \"%s\"", num, i+2, (i%6)+1, label)
+		fmt.Fprintf(plt.file, "$data_%d using 1:%d %s title \"%s\"", num, i+2, mode, label)
 	}
 	fmt.Fprintln(plt.file)
 	return Success()
