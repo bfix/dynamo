@@ -388,7 +388,7 @@ func init() {
 		},
 		"DELAY3": &Function{
 			NumArgs:  2,
-			NumVars:  7,
+			NumVars:  6,
 			DepModes: []int{DEP_ENFORCE, DEP_NORMAL},
 			Check: func(args []ast.Expr) *Result {
 				// the first variable must be of kind RATE from OLD state
@@ -446,7 +446,6 @@ func init() {
 					mdl.Current[args[5]] = a
 					mdl.Current[args[6]] = l1
 					mdl.Current[args[7]] = a
-					mdl.Current[args[8]] = b / 3.
 					val = a
 					return
 				}
@@ -469,18 +468,22 @@ func init() {
 				if r3, res = resolve(args[7], mdl); !res.Ok {
 					return
 				}
-				if dl, res = resolve(args[8], mdl); !res.Ok {
-					return
-				}
 				// compute new internal state
-				mdl.Current[args[8]] = b / 3.
+				dl = b / 3.
+				l3 = l3 + dt*(r2-r3)
+				l2 = l2 + dt*(r1-r2)
+				r2 = l2 / dl
+				l1 = l1 + dt*(a-r1)
+				r1 = l1 / dl
 				val = l3 / dl
+				// save new state
+				mdl.Current[args[2]] = l1
+				mdl.Current[args[3]] = r1
+				mdl.Current[args[4]] = l2
+				mdl.Current[args[5]] = r2
+				mdl.Current[args[6]] = l3
 				mdl.Current[args[7]] = val
-				mdl.Current[args[6]] += dt * (r2 - r3)
-				mdl.Current[args[5]] = l2 / dl
-				mdl.Current[args[4]] += dt * (r1 - r2)
-				mdl.Current[args[3]] = l1 / dl
-				mdl.Current[args[2]] += dt * (a - r1)
+
 				// return function result
 				res = Success()
 				return
