@@ -21,6 +21,7 @@ package dynamo
 //----------------------------------------------------------------------
 
 import (
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -129,7 +130,15 @@ func (mdl *Model) Dump() {
 	mdl.Eqns.Dump(mdl.Verbose)
 	Msg("-----------------------------------")
 	Msgf(" Number of TABLE def's: %4d\n", len(mdl.Tables))
-	for tname, tbl := range mdl.Tables {
+	// sort list of table names
+	var tblNames []string
+	for tname := range mdl.Tables {
+		tblNames = append(tblNames, tname)
+	}
+	sort.Strings(tblNames)
+	// print tables (in sorted order)
+	for _, tname := range tblNames {
+		tbl := mdl.Tables[tname]
 		Msgf("   %s: %v\n", tname, tbl.Data)
 	}
 	Msg("-----------------------------------")
