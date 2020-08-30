@@ -19,6 +19,6 @@ The hawk-dove-law-abider macro model is on pages 32-43 in the book
 The lines 32ff were added to generate print and plot output. Line 30 (LENGTH)
 was adjusted to "7" (140 steps with DT=0.05).
 
-![dove-hawk-law abider](dove_hawk_law-abider.svg)
+<img src="plots/dove_hawk_law-abider_(1).svg" alt="dove-hawk-law abider"/>
 
 Looks like that "law-abiding people" win in the end...
