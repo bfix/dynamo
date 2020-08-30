@@ -324,8 +324,11 @@ func init() {
 				if !res.Ok {
 					return res
 				}
-				if n.Kind != NAME_KIND_RATE && n.Kind != NAME_KIND_LEVEL {
-					return Failure(ErrModelFunction+": DELAY1 --  %s not a rate or level", n.String())
+				if n.Kind != NAME_KIND_RATE {
+					return Failure(ErrModelFunction+": DELAY1 --  %s not a rate", n.String())
+				}
+				if n.Stage != NAME_STAGE_OLD {
+					return Failure(ErrModelFunction+": DELAY1 --  %s%s not old", n.Name, n.GetIndex())
 				}
 				return Success()
 			},
