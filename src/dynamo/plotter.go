@@ -300,40 +300,16 @@ func (plt *Plotter) Add(epoch int) (res *Result) {
 	return
 }
 
-var (
-	// LOG_FACTOR for range bounds (equidistant in log scale)
-	LOG_FACTOR = []float64{0.5, 1, 2, 5, 10}
-)
-
 // Plot the collected data
 func (plt *Plotter) plot() (res *Result) {
 	res = Success()
-
-	// calibrate ranges
-	calib := func(y float64, side int) float64 {
-		yl := math.Log10(math.Abs(y))
-		yb := math.Floor(yl)
-		yf := (yl - yb)
-		yk := 1
-		switch {
-		case yf > 0.699:
-			yk = 4
-		case yf > 0.301:
-			yk = 3
-		case yf > 0:
-			yk = 2
-		}
-		if side < 0 && y > 0 {
-			yk = yk - 1
-		}
-		return LOG_FACTOR[yk] * math.Pow10(int(yb))
-	}
 
 	Msgf("      Generating plot(s)...")
 	for _, pj := range plt.jobs {
 		// increment 'processed' counter
 		plt.processed++
-		// get actual range for each plot group (if not defined in PLOT statement)
+
+		// compute range for each plot group (if not defined in PLOT statement)
 		for _, grp := range pj.grps {
 			if grp.ValidRange {
 				continue
@@ -348,19 +324,21 @@ func (plt *Plotter) plot() (res *Result) {
 			}
 			grp.ValidRange = true
 
-			// compute plot/segment width (plot.width = 4 * seg.width)
-			w := 4 * calib((grp.Max-grp.Min)/4, 1)
-			ymin := math.Copysign(calib(grp.Min, -1), grp.Min)
-			ymax := math.Copysign(calib(grp.Max, 1), grp.Max)
-			// adjust boundaries to width; use bound with smaller error
-			if grp.Max < ymin+w {
-				grp.Min = ymin
-				grp.Max = ymin + w
-			} else if grp.Min < ymax-w {
-				grp.Max = ymax
-				grp.Min = ymax - w
-			} else {
-				res = Failure(ErrPlotRange)
+			// find optimal bounds for plot
+			w := math.Pow10(int(math.Floor(math.Log10((grp.Max - grp.Min) / 4))))
+			for i := 0; ; i++ {
+				min := math.Floor(grp.Min/w) * w
+				max := min + 4*w
+				if min < grp.Min && max > grp.Max {
+					grp.Min = min
+					grp.Max = max
+					break
+				}
+				if i%3 == 1 {
+					w *= 2.5
+				} else {
+					w *= 2.
+				}
 			}
 		}
 		// now do the actual plotting
@@ -422,11 +400,12 @@ func (plt *Plotter) plot_dyn(pj *PlotJob) *Result {
 			s += fmt.Sprintf("%s=%c", pv.Name, pv.Sym)
 		}
 		w := (grp.Max - grp.Min) / 4.
-		y0 := FormatNumber(grp.Min, 4, 3)
-		y1 := FormatNumber(grp.Min+w, 4, 3)
-		y2 := FormatNumber(grp.Min+2*w, 4, 3)
-		y3 := FormatNumber(grp.Min+3*w, 4, 3)
-		y4 := FormatNumber(grp.Max, 4, 3)
+		f := int(math.Floor((math.Log10(w)) / 3))
+		y0 := FormatNumber(grp.Min, f)
+		y1 := FormatNumber(grp.Min+w, f)
+		y2 := FormatNumber(grp.Min+2*w, f)
+		y3 := FormatNumber(grp.Min+3*w, f)
+		y4 := FormatNumber(grp.Max, f)
 		fmt.Fprintf(plt.file, "%14s%25s%25s%25s%25s %s\n", y0, y1, y2, y3, y4, s)
 	}
 	// draw graph
@@ -474,11 +453,12 @@ func (plt *Plotter) plot_gnu(pj *PlotJob, num int, title string) *Result {
 	}
 	for _, grp := range pj.grps {
 		w := (grp.Max - grp.Min) / 4.
-		addScale(0, FormatNumber(grp.Min, 4, 3))
-		addScale(1, FormatNumber(grp.Min+w, 4, 3))
-		addScale(2, FormatNumber(grp.Min+2*w, 4, 3))
-		addScale(3, FormatNumber(grp.Min+3*w, 4, 3))
-		addScale(4, FormatNumber(grp.Max, 4, 3))
+		f := int(math.Floor((math.Log10(w)) / 3))
+		addScale(0, FormatNumber(grp.Min, f))
+		addScale(1, FormatNumber(grp.Min+w, f))
+		addScale(2, FormatNumber(grp.Min+2*w, f))
+		addScale(3, FormatNumber(grp.Min+3*w, f))
+		addScale(4, FormatNumber(grp.Max, f))
 	}
 	scales := float64(len(pj.grps))
 	// emit data
@@ -530,4 +510,26 @@ func (plt *Plotter) plot_gnu(pj *PlotJob, num int, title string) *Result {
 	}
 	fmt.Fprintln(plt.file)
 	return Success()
+}
+
+//----------------------------------------------------------------------
+// Helper methods
+//----------------------------------------------------------------------
+
+const (
+	// SCALE letter in DYNAMO notation
+	SCALE = "KYWULJHGFEA TMBRQVSPCNDZ"
+)
+
+/// FormatNumber  a number in short form with scale
+func FormatNumber(x float64, f int) string {
+	// normalize 'x' to scaling factor 'f'
+	if f < -10 {
+		f = -10
+	} else if f > 11 {
+		f = 11
+	}
+	xs := int(math.Floor(x / math.Pow10(3*f)))
+	ss := SCALE[f+10]
+	return fmt.Sprintf("%d.%c", xs, ss)
 }
