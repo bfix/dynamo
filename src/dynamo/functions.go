@@ -278,7 +278,7 @@ func init() {
 		"TABLE": &Function{
 			NumArgs:  5,
 			NumVars:  1,
-			DepModes: []int{DEP_NORMAL, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL},
+			DepModes: []int{DEP_SKIP, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL},
 			Check:    nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				return table(args, mdl, 0)
@@ -287,7 +287,7 @@ func init() {
 		"TABHL": &Function{
 			NumArgs:  5,
 			NumVars:  0,
-			DepModes: []int{DEP_NORMAL, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL},
+			DepModes: []int{DEP_SKIP, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL},
 			Check:    nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				return table(args, mdl, 0)
@@ -296,7 +296,7 @@ func init() {
 		"TABXT": &Function{
 			NumArgs:  5,
 			NumVars:  1,
-			DepModes: []int{DEP_NORMAL, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL},
+			DepModes: []int{DEP_SKIP, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL},
 			Check:    nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				return table(args, mdl, 1)
@@ -305,7 +305,7 @@ func init() {
 		"TABPL": &Function{
 			NumArgs:  5,
 			NumVars:  1,
-			DepModes: []int{DEP_NORMAL, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL},
+			DepModes: []int{DEP_SKIP, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL},
 			Check:    nil,
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				return table(args, mdl, 2)
