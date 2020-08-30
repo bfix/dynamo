@@ -325,20 +325,17 @@ func (plt *Plotter) plot() (res *Result) {
 			grp.ValidRange = true
 
 			// find optimal bounds for plot
-			w := math.Pow10(int(math.Floor(math.Log10((grp.Max - grp.Min) / 4))))
-			for i := 0; ; i++ {
+			w0 := math.Pow10(3 * int(math.Floor(math.Log10((grp.Max-grp.Min)/4))/3))
+			w := w0
+			for {
 				min := math.Floor(grp.Min/w) * w
 				max := min + 4*w
-				if min < grp.Min && max > grp.Max {
+				if compare(min, grp.Min) <= 0 && compare(max, grp.Max) >= 0 {
 					grp.Min = min
 					grp.Max = max
 					break
 				}
-				if i%3 == 1 {
-					w *= 2.5
-				} else {
-					w *= 2.
-				}
+				w += w0
 			}
 		}
 		// now do the actual plotting
