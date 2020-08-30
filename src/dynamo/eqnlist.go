@@ -53,7 +53,7 @@ func (el *EqnList) Clone() *EqnList {
 // Contains return true if equation (target) is in the list.
 func (el *EqnList) Contains(eqn *Equation) bool {
 	for _, e := range el.eqns {
-		if e.Target.Compare(eqn.Target) == NAME_MATCH {
+		if e.Target.Compare(eqn.Target) == NAME_MATCH && e.Mode == eqn.Mode {
 			return true
 		}
 	}
@@ -63,7 +63,7 @@ func (el *EqnList) Contains(eqn *Equation) bool {
 // Replace equation in list.
 func (el *EqnList) Replace(eqn *Equation) {
 	for i, e := range el.eqns {
-		if e.Target.Compare(eqn.Target) == NAME_MATCH {
+		if e.Target.Compare(eqn.Target) == NAME_MATCH && e.Mode == eqn.Mode {
 			el.eqns[i] = eqn
 			break
 		}
