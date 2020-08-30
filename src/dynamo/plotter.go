@@ -273,7 +273,11 @@ func (plt *Plotter) Start() (res *Result) {
 			plt.file.WriteString("set style line 3 lc rgb '#0000ff' lt 1 lw 2 pi -1 ps 1.0\n")
 			plt.file.WriteString("set style line 4 lc rgb '#ff00ff' lt 1 lw 2 pi -1 ps 1.0\n")
 			plt.file.WriteString("set style line 5 lc rgb '#00ffff' lt 1 lw 2 pi -1 ps 1.0\n")
-			plt.file.WriteString("set style line 6 lc rgb '#ffff00' lt 1 lw 2 pi -1 ps 1.0\n")
+			plt.file.WriteString("set style line 6 lc rgb '#ff0000' lt 2 lw 2 pi -1 ps 1.0\n")
+			plt.file.WriteString("set style line 7 lc rgb '#00ff00' lt 2 lw 2 pi -1 ps 1.0\n")
+			plt.file.WriteString("set style line 8 lc rgb '#0000ff' lt 2 lw 2 pi -1 ps 1.0\n")
+			plt.file.WriteString("set style line 9 lc rgb '#ff00ff' lt 2 lw 2 pi -1 ps 1.0\n")
+			plt.file.WriteString("set style line 10 lc rgb '#00ffff' lt 2 lw 2 pi -1 ps 1.0\n")
 		}
 	}
 	return
@@ -495,7 +499,7 @@ func (plt *Plotter) plot_gnu(pj *PlotJob, num int, title string) *Result {
 	fmt.Fprintf(plt.file, "set output \"%s_(%d).svg\"\n", plt.base, num)
 	fmt.Fprintf(plt.file, "plot ")
 	for i, label := range list {
-		mode := fmt.Sprintf("with line ls %d", (i%6)+1)
+		mode := fmt.Sprintf("with line ls %d", (i%10)+1)
 		pv := plt.vars[label]
 		if strings.Index("*#", string(pv.Sym)) != -1 {
 			mode = "with point"
