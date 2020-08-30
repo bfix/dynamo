@@ -29,11 +29,10 @@ on pages 136-138.
 
 A [newer DYNAMO model](https://en.wikipedia.org/wiki/World3) - called _WORLD3_ -
 was used by Dennis Meadows et al. as a basis for the report "_The Limits to
-Growth_".
+Growth_" published by the "Club of Rome". The source code for _WORLD3_ can be
+found on pages 549-557 of the book _Dynamics of growth in a finite world_ .
 
-Both models can be found in the folder `world/`.
-
-**N.B.: The WORLD3 model is not available yet - hopefully coming soon!**
+Both world models can be found in the folder `world/`.
 
 ## Models from the book "Introduction to System Dynamics Modeling with DYNAMO"
 
