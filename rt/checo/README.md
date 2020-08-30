@@ -39,6 +39,23 @@ ARTEFACT".
 
 ## CHECO run with the DYNAMO interpreter
 
+To run the model with the DYNMAO interpreter, the source code required one
+small adjustment; line 8 of the [original code](checo-orig.dynamo) read:
+
+```
+R     R10.KL=DELAY1(CPRR.K,DEM1)
+```
+
+According to the DYNAMO interpreter language rules the first argument to DELAY1
+must be a rate (with index ".JK"); so the original line is replaced with:
+
+```
+R     DEL.KL=CPRR.K
+R     R10.KL=DELAY1(DEL.JK,DEM1)
+```
+
+Now we can run the model:
+
 ```
 DYNAMO interpreter v1.0  (20200728)
 Copyright (C) 2020, Bernd Fix   >Y<
@@ -54,7 +71,7 @@ Running system model...
    Run completed.
 ```
 
-![checo.dynamo graph](checo.svg)
+<img src="checo_(1).svg" alt="checo.dynamo graph"/>
 
 * **STB** = Stocks
 * **CP** = Productive capital
