@@ -525,11 +525,11 @@ const (
 func FormatNumber(x float64, f int) string {
 	// normalize 'x' to scaling factor 'f'
 	if f < -10 {
-		f = -10
+		f = -11
 	} else if f > 11 {
-		f = 11
+		f = 12
 	}
 	xs := int(math.Floor(x / math.Pow10(3*f)))
-	ss := SCALE[f+10]
+	ss := SCALE[f+11]
 	return fmt.Sprintf("%d.%c", xs, ss)
 }
