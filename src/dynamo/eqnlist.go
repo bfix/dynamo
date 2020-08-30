@@ -50,10 +50,25 @@ func (el *EqnList) Clone() *EqnList {
 	return out
 }
 
-// Contains return true if equation (target) is in the list.
+// Check if two equations are matching (wrt. to containment/replacement)
+func (el *EqnList) match(e1, e2 *Equation) bool {
+	if e1.Target.Compare(e2.Target) == NAME_MATCH {
+		// equations match for matching targets
+		return true
+	}
+	if e1.Target.Compare(e2.Target)&NAME_SAMEVAR != 0 {
+		if strings.Contains("CNC", e1.Mode+e2.Mode) {
+			// modes are "C" or "N" on both equations -> match
+			return true
+		}
+	}
+	return false
+}
+
+// Contains return true if equation is already in the list.
 func (el *EqnList) Contains(eqn *Equation) bool {
 	for _, e := range el.eqns {
-		if e.Target.Compare(eqn.Target) == NAME_MATCH && e.Mode == eqn.Mode {
+		if el.match(e, eqn) {
 			return true
 		}
 	}
@@ -63,7 +78,7 @@ func (el *EqnList) Contains(eqn *Equation) bool {
 // Replace equation in list.
 func (el *EqnList) Replace(eqn *Equation) {
 	for i, e := range el.eqns {
-		if e.Target.Compare(eqn.Target) == NAME_MATCH && e.Mode == eqn.Mode {
+		if el.match(e, eqn) {
 			el.eqns[i] = eqn
 			break
 		}
