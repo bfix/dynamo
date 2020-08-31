@@ -332,7 +332,11 @@ func (mdl *Model) AddStatement(stmt *Line) (res *Result) {
 func (mdl *Model) Get(name *Name) (val Variable, res *Result) {
 	res = Success()
 	defer func() {
-		Dbg.Msgf("<   %s = %f (%d)\n", name, val, name.Stage)
+		if res.Ok {
+			Dbg.Msgf("<   %s = %f (%d)\n", name, val, name.Stage)
+		} else {
+			Dbg.Msgf("<   %s = FAILED\n", name)
+		}
 	}()
 
 	var ok bool
@@ -379,9 +383,11 @@ func (mdl *Model) IsSystem(name string) bool {
 func (mdl *Model) Initial(name string) (val Variable, res *Result) {
 	// find equation for quantity
 	if eqn := mdl.Eqns.Find(name); eqn != nil {
-		return eqn.Eval(mdl)
+		val, res = eqn.Eval(mdl)
+	} else {
+		res = Failure(ErrModelNoInitial+": %s", name)
 	}
-	return 0, Failure(ErrModelNoInitial+": %s", name)
+	return
 }
 
 //----------------------------------------------------------------------
