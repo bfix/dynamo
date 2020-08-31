@@ -338,7 +338,7 @@ func (el *EqnList) Sort(mdl *Model) (eqns *EqnList, res *Result) {
 	// sort both lists
 	var listInit, listRun []int
 	Dbg.Msg("Sorting eqnInit...")
-	if listInit, res = eqnSort(eqnInit, nil); res.Ok {
+	if listInit, res = eqnSort(eqnInit, eqnRun); res.Ok {
 		Dbg.Msg("Sorting eqnRun...")
 		if listRun, res = eqnSort(eqnRun, eqnInit); res.Ok {
 			// build re-ordered equation list
