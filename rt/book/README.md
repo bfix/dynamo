@@ -36,7 +36,6 @@ Richardson and Alexander L. Pugh III, The MIT Press, 1981 (ISBN
 </tr>
 </table>
 
-
 ## inventory
 
 A simple inventory control model (Page 124, Figure 3.25)
@@ -129,3 +128,21 @@ randomness; re-running the model would also generate a different graph.
 <td/>
 </tr>
 </table>
+
+## prison
+
+A **simple model for prison population** is described on pages 181-185:
+
+<table>
+<tr>
+<td width="30%" valign="top">
+  <img src="plots/prison_(1).svg" alt="prison.dynamo graph (below capacity)" />
+  <p>Prison population below capacity (Page 183, Figure 4.22)</p>
+</td>
+<td width="30%" valign="top">
+  <img src="plots/prison_(2).svg" alt="prison.dynamo graph (above capacity)" />
+  <p>Prison population above capacity (Page 184, Figure 4.23)</p>
+</td>
+</tr>
+</table>
+
