@@ -144,5 +144,12 @@ A **simple model for prison population** is described on pages 181-185:
   <p>Prison population above capacity (Page 184, Figure 4.23)</p>
 </td>
 </tr>
+<tr>
+<td width="30%" valign="top">
+  <img src="plots/prison-model.svg" alt="prison flowchart" width="80%" />
+</td>
+<td width="30%" valign="top">
+</td>
+</tr>
 </table>
 

@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/PR-SVG-20010719/DTD/svg10.dtd">
+<svg width="46cm" height="27cm" viewBox="178 202 918 530" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <g id="Hintergrund">
+    <g>
+      <path style="fill: #ffffff; fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; stroke: #000000" fill-rule="evenodd" d="M 202.768 242.282 C 194.412,242.282 176.865,247.853 180.486,258.994 C 180.486,272.92 194.412,275.706 197.197,272.92 C 202.768,267.35 191.627,289.632 213.909,295.203 C 238.976,300.773 252.903,289.632 247.332,284.061 C 244.547,278.491 269.614,300.773 280.756,286.847 C 291.896,275.706 269.614,264.564 275.185,266.793 C 280.756,267.35 294.682,264.564 289.111,245.067 C 286.326,222.785 238.976,239.497 244.547,236.712 C 250.117,233.926 236.191,220 222.265,220 C 205.553,222.785 205.553,228.356 202.768,242.282z"/>
+      <text font-size="12.7998" style="fill: #000000; fill-opacity: 1; stroke: none;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="235" y="260.667">
+        <tspan x="235" y="260.667"></tspan>
+      </text>
+    </g>
+    <g>
+      <rect style="fill: #ffffff; fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; stroke: #000000" x="600" y="205" width="135" height="81" rx="0" ry="0"/>
+      <text font-size="12.7998" style="fill: #000000; fill-opacity: 1; stroke: none;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="667.5" y="233.5">
+        <tspan x="667.5" y="233.5">PP</tspan>
+        <tspan x="667.5" y="249.5">Prison</tspan>
+        <tspan x="667.5" y="265.5">population</tspan>
+      </text>
+    </g>
+    <g>
+      <path style="fill: #ffffff; fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; stroke: #000000" fill-rule="evenodd" d="M 971.567 227.25 C 963.211,227.25 945.664,232.821 949.284,243.962 C 949.284,257.888 963.211,260.674 965.996,257.888 C 971.567,252.318 960.426,274.6 982.708,280.171 C 1007.78,285.741 1021.7,274.6 1016.13,269.029 C 1013.35,263.459 1038.41,285.741 1049.55,271.815 C 1060.7,260.674 1038.41,249.532 1043.98,251.761 C 1049.55,252.318 1063.48,249.532 1057.91,230.036 C 1055.13,207.753 1007.78,224.465 1013.35,221.68 C 1018.92,218.894 1004.99,204.968 991.064,204.968 C 974.352,207.753 974.352,213.324 971.567,227.25z"/>
+      <text font-size="12.7998" style="fill: #000000; fill-opacity: 1; stroke: none;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="1003.8" y="245.635">
+        <tspan x="1003.8" y="245.635"></tspan>
+      </text>
+    </g>
+    <g>
+      <polygon style="fill: #ffffff; fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; stroke: #000000" fill-rule="evenodd" points="384,292 430.667,245.333 477.333,292 477.333,408.667 384,408.667 "/>
+      <polygon style="fill: #ffffff; fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; stroke: #000000" fill-rule="evenodd" points="407.333,222 454,222 430.667,245.333 "/>
+      <text font-size="12.7998" style="fill: #000000; fill-opacity: 1; stroke: none;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="430.667" y="307">
+        <tspan x="430.667" y="307">IR</tspan>
+        <tspan x="430.667" y="323">Incarcer-</tspan>
+        <tspan x="430.667" y="339">ation</tspan>
+        <tspan x="430.667" y="355">rate</tspan>
+      </text>
+    </g>
+    <g>
+      <polygon style="fill: #ffffff; fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; stroke: #000000" fill-rule="evenodd" points="796,288.5 839,245.5 882,288.5 882,396 796,396 "/>
+      <polygon style="fill: #ffffff; fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; stroke: #000000" fill-rule="evenodd" points="817.5,224 860.5,224 839,245.5 "/>
+      <text font-size="12.7998" style="fill: #000000; fill-opacity: 1; stroke: none;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="839" y="308.75">
+        <tspan x="839" y="308.75">RR</tspan>
+        <tspan x="839" y="324.75">Release</tspan>
+        <tspan x="839" y="340.75">rate</tspan>
+      </text>
+    </g>
+    <g>
+      <ellipse style="fill: #ffffff; fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; stroke: #000000" cx="607.5" cy="427.5" rx="67.5" ry="67.5"/>
+      <text font-size="12.7998" style="fill: #000000; fill-opacity: 1; stroke: none;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="607.5" y="415.5">
+        <tspan x="607.5" y="415.5">CR</tspan>
+        <tspan x="607.5" y="431.5">Capacity</tspan>
+        <tspan x="607.5" y="447.5">ratio</tspan>
+      </text>
+    </g>
+    <g>
+      <ellipse style="fill: #ffffff; fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; stroke: #000000" cx="827.5" cy="527.5" rx="67.5" ry="67.5"/>
+      <text font-size="12.7998" style="fill: #000000; fill-opacity: 1; stroke: none;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="827.5" y="515.5">
+        <tspan x="827.5" y="515.5">ATS</tspan>
+        <tspan x="827.5" y="531.5">Average</tspan>
+        <tspan x="827.5" y="547.5">time served</tspan>
+      </text>
+    </g>
+    <g>
+      <ellipse style="fill: #ffffff; fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; stroke: #000000" cx="695" cy="675" rx="55" ry="55"/>
+      <line style="fill: none; stroke-opacity: 1; stroke-width: 2; stroke: #000000" x1="642.75" y1="658.5" x2="747.25" y2="658.5"/>
+      <line style="fill: none; stroke-opacity: 1; stroke-width: 2; stroke: #000000" x1="642.75" y1="691.5" x2="747.25" y2="691.5"/>
+      <text font-size="12.7998" style="fill: #000000; fill-opacity: 1; stroke: none;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="695" y="679">
+        <tspan x="695" y="679">ECTS</tspan>
+      </text>
+    </g>
+    <g>
+      <line style="fill: none; stroke-opacity: 1; stroke-width: 2; stroke: #ffffff" x1="920" y1="716.25" x2="1095" y2="716.25"/>
+      <line style="fill: none; stroke-opacity: 1; stroke-width: 2; stroke: #000000" x1="920" y1="628.75" x2="1095" y2="628.75"/>
+      <ellipse style="fill: #ffffff; fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; stroke: #000000" cx="1007.5" cy="628.75" rx="8.75" ry="8.75"/>
+      <text font-size="12.7998" style="fill: #000000; fill-opacity: 1; stroke: none;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="1007.5" y="661.25">
+        <tspan x="1007.5" y="661.25">ASL</tspan>
+        <tspan x="1007.5" y="677.25">Average</tspan>
+        <tspan x="1007.5" y="693.25">sentence</tspan>
+        <tspan x="1007.5" y="709.25">length</tspan>
+      </text>
+    </g>
+    <g>
+      <line style="fill: none; stroke-opacity: 1; stroke-width: 2; stroke: #ffffff" x1="380" y1="654.25" x2="515" y2="654.25"/>
+      <line style="fill: none; stroke-opacity: 1; stroke-width: 2; stroke: #000000" x1="380" y1="586.75" x2="515" y2="586.75"/>
+      <ellipse style="fill: #ffffff; fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; stroke: #000000" cx="447.5" cy="586.75" rx="6.75" ry="6.75"/>
+      <text font-size="12.7998" style="fill: #000000; fill-opacity: 1; stroke: none;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="447.5" y="615.25">
+        <tspan x="447.5" y="615.25">PC</tspan>
+        <tspan x="447.5" y="631.25">Prison</tspan>
+        <tspan x="447.5" y="647.25">capacity</tspan>
+      </text>
+    </g>
+    <g>
+      <ellipse style="fill: #ffffff; fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; stroke: #000000" cx="235" cy="515" rx="55" ry="55"/>
+      <ellipse style="fill: #ffffff; fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; stroke: #000000" cx="235" cy="515" rx="49.5" ry="49.5"/>
+      <text font-size="12.7998" style="fill: #000000; fill-opacity: 1; stroke: none;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="235" y="519">
+        <tspan x="235" y="519">EIR</tspan>
+      </text>
+    </g>
+    <g>
+      <line style="fill: none; stroke-opacity: 1; stroke-width: 2; stroke: #000000" x1="290" y1="245.667" x2="589" y2="245.506"/>
+      <polygon style="fill: #000000; fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; stroke: #000000" fill-rule="evenodd" points="589.003,250.506 599,245.501 588.997,240.506 "/>
+    </g>
+    <g>
+      <line style="fill: none; stroke-opacity: 1; stroke-width: 2; stroke: #000000" x1="735" y1="245.5" x2="937.799" y2="245.312"/>
+      <polygon style="fill: #000000; fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; stroke: #000000" fill-rule="evenodd" points="937.804,250.312 947.799,245.302 937.794,240.312 "/>
+    </g>
+    <g>
+      <path style="fill: none; stroke-opacity: 1; stroke-width: 2; stroke-dasharray: 10; stroke: #000000" d="M 832.204,450.108 A 103.696,103.696 0 0 0 839.966,406.911"/>
+      <path style="fill: #ffffff; fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; stroke: #000000" fill-rule="evenodd" d="M 827.977 459.121 C 825.779,457.93 824.772,454.54 825.963,452.342 C 827.155,450.145 830.544,449.138 832.742,450.329 C 834.94,451.521 835.946,454.91 834.755,457.108 C 833.564,459.306 830.174,460.312 827.977,459.121z"/>
+      <polygon style="fill: #000000; fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; stroke: #000000" fill-rule="evenodd" points="845.498,406.187 839.141,396.99 835.597,407.594 "/>
+    </g>
+    <g>
+      <path style="fill: none; stroke-opacity: 1; stroke-width: 2; stroke-dasharray: 10; stroke: #000000" d="M 300.974,514.974 A 139.478,139.478 0 0 0 427.649,419.218"/>
+      <path style="fill: #ffffff; fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; stroke: #000000" fill-rule="evenodd" d="M 290.999 515.037 C 291.092,512.539 293.683,510.133 296.181,510.225 C 298.679,510.318 301.085,512.909 300.992,515.407 C 300.9,517.905 298.309,520.311 295.811,520.219 C 293.313,520.126 290.907,517.535 290.999,515.037z"/>
+      <polygon style="fill: #000000; fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; stroke: #000000" fill-rule="evenodd" points="432.918,420.538 430.43,409.638 423.203,418.169 "/>
+    </g>
+    <g>
+      <path style="fill: none; stroke-opacity: 1; stroke-width: 2; stroke-dasharray: 10; stroke: #000000" d="M 656.779,287.908 A 66.725,66.725 0 0 0 607.151,349.116"/>
+      <path style="fill: #ffffff; fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; stroke: #000000" fill-rule="evenodd" d="M 666.504 286.094 C 666.74,288.583 664.487,291.308 661.998,291.544 C 659.51,291.779 656.785,289.526 656.549,287.038 C 656.313,284.549 658.566,281.824 661.055,281.588 C 663.544,281.352 666.269,283.605 666.504,286.094z"/>
+      <polygon style="fill: #000000; fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; stroke: #000000" fill-rule="evenodd" points="601.284,349.639 607.387,359.006 611.219,348.504 "/>
+    </g>
+    <g>
+      <path style="fill: none; stroke-opacity: 1; stroke-width: 2; stroke-dasharray: 10; stroke: #000000" d="M 664.869,290.564 A 151.713,151.713 0 0 0 785.05,343.034"/>
+      <path style="fill: #ffffff; fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; stroke: #000000" fill-rule="evenodd" d="M 658.597 282.802 C 660.603,281.309 664.101,281.822 665.593,283.828 C 667.086,285.833 666.573,289.331 664.568,290.824 C 662.562,292.317 659.064,291.804 657.572,289.798 C 656.079,287.793 656.592,284.295 658.597,282.802z"/>
+      <polygon style="fill: #000000; fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; stroke: #000000" fill-rule="evenodd" points="785.601,348.403 795.006,342.357 784.527,338.461 "/>
+    </g>
+    <g>
+      <path style="fill: none; stroke-opacity: 1; stroke-width: 2; stroke-dasharray: 10; stroke: #000000" d="M 447.5,586.75 A 178.926,178.926 0 0 1 530.549,433.097"/>
+      <polygon style="fill: #000000; fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; stroke: #000000" fill-rule="evenodd" points="532.782,437.19 539.124,427.983 527.953,428.434 "/>
+    </g>
+    <g>
+      <path style="fill: none; stroke-opacity: 1; stroke-width: 2; stroke-dasharray: 10; stroke: #000000" d="M 600.696,503.597 A 117.229,117.229 0 0 0 630.619,669.325"/>
+      <path style="fill: #ffffff; fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; stroke: #000000" fill-rule="evenodd" d="M 606.843 495.754 C 608.729,497.396 608.973,500.923 607.332,502.808 C 605.69,504.694 602.163,504.938 600.278,503.297 C 598.392,501.655 598.148,498.128 599.789,496.243 C 601.431,494.357 604.958,494.113 606.843,495.754z"/>
+      <polygon style="fill: #000000; fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; stroke: #000000" fill-rule="evenodd" points="627.947,674.147 639.121,674.523 632.717,665.358 "/>
+    </g>
+    <g>
+      <path style="fill: none; stroke-opacity: 1; stroke-width: 2; stroke-dasharray: 10; stroke: #000000" d="M 760.77,673.104 A 87.5391,87.5391 0 0 0 825.947,605.825"/>
+      <path style="fill: #ffffff; fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; stroke: #000000" fill-rule="evenodd" d="M 750.994 674.889 C 750.715,672.404 752.921,669.641 755.405,669.362 C 757.89,669.084 760.653,671.289 760.931,673.774 C 761.21,676.258 759.004,679.021 756.52,679.3 C 754.036,679.579 751.272,677.373 750.994,674.889z"/>
+      <polygon style="fill: #000000; fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; stroke: #000000" fill-rule="evenodd" points="831.605,606.364 827.42,595.997 821.637,605.565 "/>
+    </g>
+    <g>
+      <path style="fill: none; stroke-opacity: 1; stroke-width: 2; stroke-dasharray: 10; stroke: #000000" d="M 1007.5,628.75 A 153.174,153.174 0 0 0 905.632,530.237"/>
+      <polygon style="fill: #000000; fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; stroke: #000000" fill-rule="evenodd" points="906.816,524.975 895.977,527.714 904.672,534.742 "/>
+    </g>
+  </g>
+</svg>
