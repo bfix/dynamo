@@ -13,16 +13,29 @@ Richardson and Alexander L. Pugh III, The MIT Press, 1981 (ISBN
 
 <table>
 <tr>
-<td width="30%">
+<td width="30%" valign="top">
   <img src="plots/flu_(1).svg" alt="flu.dynamo graph (simple)" />
   <p>Simple epidemic model (Page 96, Figure 3.7)</p>
 </td>
-<td width="30%">
+<td width="30%" valign="top">
   <img src="plots/flu_(2).svg" alt="flu.dynamo graph (delay)" />
   <p>Improved epidemic model with incubation (Page 104, Figure 3.4)</p>
 </td>
 </tr>
+<tr>
+<td width="30%" valign="top">
+  <hr/>
+  <img src="plots/flu-model-1.svg" alt="flu model (simple)" width="80%" />
+  <p>Model for simple epidemic model (Page 95, Figure 3.6)</p>
+</td>
+<td width="30%" valign="top">
+  <hr/>
+  <img src="plots/flu-model-2.svg" alt="flu model (delay)" width="80%" />
+  <p>Model for epidemic model with incubation (Page 105, Figure 3.14)</p>
+</td>
+</tr>
 </table>
+
 
 ## inventory
 
@@ -34,7 +47,7 @@ were executed for 100 epochs (101 iterations):
 
 <table>
 <tr>
-<td width="30%">
+<td width="30%" valign="top">
 <hr/>
 <b>inv-1.dynamo</b>
 
@@ -44,7 +57,7 @@ Run with `TEST1=1` (Page 125, Figure 3.26) to enable the `STEP` function.
   <img src="plots/inventory_(1).svg" alt="inv-1.dynamo graph" />
 </p>
 </td>
-<td width="30%">
+<td width="30%" valign="top">
 <hr/>
 <b>inv-2.dynamo</b>
 
@@ -56,7 +69,7 @@ Run with `TEST2=1` (Page 126, Figure 3.27) to enable the `RAMP` function.
 </td>
 </tr>
 <tr>
-<td width="30%">
+<td width="30%" valign="top">
 <hr/>
 <b>inv-3.dynamo</b>
 
@@ -66,7 +79,7 @@ Run with `TEST3=1` and `INTVL=200` (Page 128, Figure 3.28) to enable the `PULSE`
   <img src="plots/inventory_(3).svg" alt="inv-3.dynamo graph" />
 </p>
 </td>
-<td width="30%">
+<td width="30%" valign="top">
 <hr/>
 <b>inv-4.dynamo</b>
 
@@ -78,7 +91,7 @@ Run with `TEST3=1` and `INTVL=5` (Page 129, Figure 3.29) to enable the `PULSE` f
 </td>
 </tr>
 <tr>
-<td width="30%">
+<td width="30%" valign="top">
 <hr/>
 <b>inv-5.dynamo</b>
 
@@ -88,7 +101,7 @@ Run with `TEST4=1` and `PER=5` (Page 130, Figure 3.30) to enable the `SIN` funct
   <img src="plots/inventory_(5).svg" alt="inv-5.dynamo graph" />
 </p>
 </td>
-<td width="30%">
+<td width="30%" valign="top">
 <hr/>
 <b>inv-6.dynamo</b>
 
@@ -100,7 +113,7 @@ Run with `TEST4=1` and `PER=10` (Page 131, Figure 3.31) to enable the `SIN` func
 </td>
 </tr>
 <tr>
-<td width="30%">
+<td width="30%" valign="top">
 <hr/>
 <b>inv-7.dynamo</b>
 
