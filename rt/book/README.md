@@ -13,11 +13,11 @@ Richardson and Alexander L. Pugh III, The MIT Press, 1981 (ISBN
 
 <table>
 <tr>
-<td align="right" width="30%">
+<td width="30%">
   <img src="plots/flu_(1).svg" alt="flu.dynamo graph (simple)" />
   <p>Simple epidemic model (Page 96, Figure 3.7)</p>
 </td>
-<td align="left" width="30%">
+<td width="30%">
   <img src="plots/flu_(2).svg" alt="flu.dynamo graph (delay)" />
   <p>Improved epidemic model with incubation (Page 104, Figure 3.4)</p>
 </td>

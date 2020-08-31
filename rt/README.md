@@ -8,7 +8,7 @@
 [Project CYBERSYN](https://en.wikipedia.org/wiki/Project_Cybersyn) (short for
 CYBERnetic SYNergy) was the attempt of the British cybernetician
 [Stafford Beer](https://en.wikipedia.org/wiki/Stafford_Beer) to help manage
-the Chilean economy (CHECO) with a single IBM mainframe and 99 telex machines
+the Chilean economy (**CHECO**) with a single IBM mainframe and 99 telex machines
 in 1972/73. The project was never finished; it ended with the coup d'etat
 against the Allende presidency on Sepember 11<sup>th</sup>, 1973.
 
@@ -20,17 +20,18 @@ Liverpool John Moores University.
 
 ### World Dynamics
 
-In his book _World Dynamics_ (published in 1971)
+In his book "**World Dynamics**" (published in 1971)
 [J.W. Forrester][https://en.wikipedia.org/wiki/Jay_Wright_Forrester)
 designed a model to simulate the system dynamics of the world's population,
 food supply, natural resources, pollution and many other key features. This
-model - called _WORLD2_ - was written in DYNAMO and published in the book
+model - called **WORLD2** - was written in DYNAMO and published in the book
 on pages 136-138.
 
-A [newer DYNAMO model](https://en.wikipedia.org/wiki/World3) - called _WORLD3_ -
-was used by Dennis Meadows et al. as a basis for the report "_The Limits to
-Growth_" published by the "Club of Rome". The source code for _WORLD3_ can be
-found on pages 549-557 of the book _Dynamics of growth in a finite world_ .
+A [newer DYNAMO model](https://en.wikipedia.org/wiki/World3) - called
+**WORLD3** - was used by Dennis Meadows et al. as a basis for the report
+"_The Limits to Growth_" published by the _Club of Rome_. The source code for
+**WORLD3** can be found on pages 549-557 of the book "**Dynamics of growth in
+a finite world**".
 
 Both world models can be found in the folder `world/`.
 

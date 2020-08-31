@@ -34,17 +34,51 @@ September 1972 in the `rt/checo` folder, along with charts and graphs.
 * "THE LIMITS TO GROWTH" (https://en.wikipedia.org/wiki/The_Limits_to_Growth)
 used DYNAMO to simulate global developments leading to the famous "Club of
 Rome" (https://en.wikipedia.org/wiki/Club_of_Rome) publication in 1972 that
-triggered environmental awareness globally.
+triggered environmental awareness globally. You can find the WORLD3
+implementation (as well as its predecessor WORLD2) in the `rt/world` folder.
 
-## Caveats
+## The DYNAMO interpreter
 
 This is work-in-progress at a rather early stage. It is capable of running
-simple models (see the `rt/` folder for examples), but will most likely fail
-on anything more complex. If you have some old DYNAMO models and they don't
-work with the current version, please let me know (email to brf@hoi-polloi.org)
-and I am happy to work on the interpreter to make them run again.
+simple models (see the `rt/` folder for examples), but can fail (or need
+adjustment) on anything more complex. If you have some old DYNAMO models and
+they don't work with the current version, please let me know (email to
+brf@hoi-polloi.org) and I am happy to work on the interpreter to make them
+run again.
 
-## Build the interpreter
+This interpreter was build as a "clean-room implementation"; it is not based on
+any other DYNAMO compiler code but was derived from publically available
+documentation (like the _DYNAMO User's Manual_ by Alexander L. Pugh, Alexander
+L. Pugh III from 1983) or from looking at the few DYNAMO models that can be
+found on the internet.
+
+DYNAMO itself was developed over a course of some 30 years from 1960 to 1990;
+so some features were not available in all versions or some language rules were
+less strict and only enforced in later versions. This DYNAMO interpreter tries
+to follow the most advanced language version as possible, but there are some
+limitations that need to be noticed:
+
+* The interpreter does not support macros (MACRO/MEND blocks) yet. The delay
+functions normally implemented as macros are hard-coded in the interpreter.
+
+* The DELAYP function is not available. A workaround is to use the DELAY3
+function and two additional equations:
+
+```
+R   OUT.KL=DELAY3(IN.JK,DEL)
+L   INTRN.K=INTRN.J+(DT)(IN.JK-OUT.JK)
+N   INTRN=IN*DEL
+```
+
+* No interactive edit mode: The interpreter provides a "EDIT" directive to
+allow the editing (replacing and adding equations) of a model in the source
+code. The examples in `rt/book/` folder make use of this feature; have a look
+at the models to understand the use of the edit functionality.
+
+* A print symbol ***** or **#** in the PLOT statement will trigger "point" mode
+(instead of "line" mode) in the GNUplot graph.
+
+### Build the interpreter
 
 At the moment no pre-built binaries of the DYNAMO interpreter are provided; to
 build the application, you need a working installation of Go
@@ -57,21 +91,22 @@ In the base directory of this repository issue the following command:
 GOPATH=$(pwd) go build -o dynamo src/cmd/dynamo/main.go
 ```
 
-## Running a DYNAMO model
+### Running a DYNAMO model
 
 Change into the `rt/` (runtime) folder; below that folder you can find sample
 DYNAMO models to play around with. For example you can run the epidemic model
 with the following command:
 
 ```bash
-../dynamo -p ~/flu.prt book/flu/flu.dynamo
+../dynamo -p ~/flu.prt book/flu.dynamo
 ```
 
-This will run the `flu.dynamo` model from the specified subfolder and generate
-print output in the file `~/flu.prt`.
+This will run the `flu.dynamo` model and generate a print output in the file
+`~/flu.prt`.
 
-The following options are available:
+The following command line options are available:
 
+* `-v`: verbose output; show more status messages during processing.
 * `-d <debug-file>`: write debug output to specified file. Use `-` to log to
 console.
 * `-p <print-file>`: write printer output to file: the extension used in the
@@ -83,5 +118,5 @@ filename specifies whicht plot format to use:
     * `.plt`: Generate classic DYNAMO plot output (line printer)
     * `.gnuplot`: Generate GNUplot script (SVG generator)
 
-See the README in the `rt/` folder and subfolders for more details on the
+See the README in the `rt/` folder (and subfolders) for more details on the
 example models provided.
