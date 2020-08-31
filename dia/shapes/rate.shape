@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<shape xmlns="http://www.daa.com.au/~james/dia-shape-ns" xmlns:svg="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<name>shapes - rate</name>
+	<icon>rate.png</icon>
+	<connections>
+		<point x="0" y="-1"/>
+		<point x="0" y="0"/>
+		<point x="0" y="7"/>
+		<point x="-2" y="4.5"/>
+		<point x="2" y="4.5"/>
+	</connections>
+	<aspectratio type="fixed"/>
+	<textbox x1="-1.5" y1="5" x2="1.5" y2="2" />
+	<svg:svg>
+		<svg:polygon style="fill: #ffffff; fill-opacity: 1; stroke-opacity: 1; stroke-width: 0.1; stroke: #000000" points="-2,2 0,0 2,2 2,7 -2,7"/>
+		<svg:polygon style="fill: #ffffff; fill-opacity: 1; stroke-opacity: 1; stroke-width: 0.1; stroke: #000000" points="-1,-1 1,-1 0,0"/>
+	</svg:svg>
+</shape>

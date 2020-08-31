@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+	<sheet xmlns="http://www.lysator.liu.se/~alla/dia/dia-sheet-ns">
+		<name>System Dynamics</name>
+		<description>System Dynamics glyphs</description>
+		<contents>
+		<object name="shapes - constant">
+			<description>Constant (top)</description>
+		</object>
+		<object name="shapes - constant_b">
+			<description>Constant (bottom)</description>
+		</object>
+		<object name="shapes - level">
+			<description>Level</description>
+		</object>
+		<object name="shapes - aux">
+			<description>Auxiliary</description>
+		</object>
+		<object name="shapes - rate">
+			<description>Rate (named, up)</description>
+		</object>
+		<object name="shapes - rate_d">
+			<description>Rate (named, down)</description>
+		</object>
+		<object name="shapes - rate_r">
+			<description>Rate (named, right)</description>
+		</object>
+		<object name="shapes - rate_l">
+			<description>Rate (named, left)</description>
+		</object>
+		<object name="shapes - rate2">
+			<description>Rate (horiz)</description>
+		</object>
+		<object name="shapes - rate2b">
+			<description>Rate (vert)</description>
+		</object>
+		<object name="shapes - exogenous">
+			<description>Exogenous</description>
+		</object>
+		<object name="shapes - table">
+			<description>Table</description>
+		</object>
+		<object name="shapes - source-sink">
+			<description>Source/Sink</description>
+		</object>
+	</contents>
+</sheet>

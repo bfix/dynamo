@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<shape xmlns="http://www.daa.com.au/~james/dia-shape-ns" xmlns:svg="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<name>shapes - table</name>
+	<icon>table.png</icon>
+	<connections>
+		<point x="0" y="5"/>
+		<point x="0" y="-5"/>
+		<point x="-5" y="0"/>
+		<point x="5" y="0"/>
+	</connections>
+	<aspectratio type="fixed"/>
+	<textbox x1="-4" y1="1" x2="4" y2="-1" />
+	<svg:svg>
+		<svg:circle style="fill: #ffffff; fill-opacity: 1; stroke-opacity: 1; stroke-width: 0.1; stroke: #000000" cx="0" cy="0" r="5"/>
+		<svg:line style="fill: none; stroke-opacity: 1; stroke-width: 0.1; stroke: #000000" x1="-4.75" y1="-1.5" x2="4.75" y2="-1.5"/>
+		<svg:line style="fill: none; stroke-opacity: 1; stroke-width: 0.1; stroke: #000000" x1="-4.75" y1="1.5" x2="4.75" y2="1.5"/>
+	</svg:svg>
+</shape>
