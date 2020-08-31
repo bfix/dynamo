@@ -78,6 +78,9 @@ at the models to understand the use of the edit functionality.
 * A print symbol ***** or **#** in the PLOT statement will trigger "point" mode
 (instead of "line" mode) in the GNUplot graph.
 
+* `PLTPER` and `PRTPER` can't be variable in the current version of the DYNAMO
+interpreter.
+
 ### Build the interpreter
 
 At the moment no pre-built binaries of the DYNAMO interpreter are provided; to
