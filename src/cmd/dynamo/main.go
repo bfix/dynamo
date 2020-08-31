@@ -30,7 +30,7 @@ import (
 // main entry point: call DYNAMO interpreter with given arguments
 func main() {
 	dynamo.Msg("-----------------------------------")
-	dynamo.Msg("DYNAMO interpreter v1.0  (20200728)")
+	dynamo.Msg("DYNAMO interpreter v0.5  (20200830)")
 	dynamo.Msg("Copyright (C) 2020, Bernd Fix   >Y<")
 	dynamo.Msg("-----------------------------------")
 
