@@ -123,3 +123,9 @@ filename specifies whicht plot format to use:
 
 See the README in the `rt/` folder (and subfolders) for more details on the
 example models provided.
+
+## DYNAMO flowchart shapes
+
+To create DYNAMO flowcharts in "Dia" (a GNU/Linux diagrammer), you can install
+custom shapes and a corresponding sheet from the `dia/` folder of this
+repository. All DYNAMO flowcharts in the `rt/` folder have been done that way.
