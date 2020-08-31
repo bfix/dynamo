@@ -759,15 +759,18 @@ func (tbl *Table) Newton(x Variable) Variable {
 //======================================================================
 
 // resolve returns a value from a number string or variable name
-func resolve(x string, mdl *Model) (Variable, *Result) {
-	if val, err := strconv.ParseFloat(x, 64); err == nil {
-		return Variable(val), Success()
+func resolve(x string, mdl *Model) (val Variable, res *Result) {
+	if v, err := strconv.ParseFloat(x, 64); err == nil {
+		val, res = Variable(v), Success()
+	} else {
+		var name *Name
+		if name, res = NewNameFromString(x); res.Ok {
+			if val, res = mdl.Get(name); !res.Ok {
+				val, res = mdl.Initial(name.Name)
+			}
+		}
 	}
-	name, res := NewNameFromString(x)
-	if res.Ok {
-		return mdl.Get(name)
-	}
-	return 0, res
+	return
 }
 
 // compare a variable to a value
