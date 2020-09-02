@@ -273,11 +273,11 @@ func (plt *Plotter) Start() (res *Result) {
 			plt.file.WriteString("set style line 3 lc rgb '#0000ff' lt 1 lw 2 pi -1 ps 1.0\n")
 			plt.file.WriteString("set style line 4 lc rgb '#ff00ff' lt 1 lw 2 pi -1 ps 1.0\n")
 			plt.file.WriteString("set style line 5 lc rgb '#00ffff' lt 1 lw 2 pi -1 ps 1.0\n")
-			plt.file.WriteString("set style line 6 lc rgb '#ff0000' lt 2 lw 2 pi -1 ps 1.0\n")
-			plt.file.WriteString("set style line 7 lc rgb '#00ff00' lt 2 lw 2 pi -1 ps 1.0\n")
-			plt.file.WriteString("set style line 8 lc rgb '#0000ff' lt 2 lw 2 pi -1 ps 1.0\n")
-			plt.file.WriteString("set style line 9 lc rgb '#ff00ff' lt 2 lw 2 pi -1 ps 1.0\n")
-			plt.file.WriteString("set style line 10 lc rgb '#00ffff' lt 2 lw 2 pi -1 ps 1.0\n")
+			plt.file.WriteString("set style line 6 lc rgb '#ff0000' lt 1 dt(5,5) lw 2 pi -1 ps 1.0\n")
+			plt.file.WriteString("set style line 7 lc rgb '#00ff00' lt 1 dt(5,5) lw 2 pi -1 ps 1.0\n")
+			plt.file.WriteString("set style line 8 lc rgb '#0000ff' lt 1 dt(5,5) lw 2 pi -1 ps 1.0\n")
+			plt.file.WriteString("set style line 9 lc rgb '#ff00ff' lt 1 dt(5,5) lw 2 pi -1 ps 1.0\n")
+			plt.file.WriteString("set style line 10 lc rgb '#00ffff' lt 1 dt(5,5) lw 2 pi -1 ps 1.0\n")
 		}
 	}
 	return
