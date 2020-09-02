@@ -483,6 +483,7 @@ func (plt *Plotter) plot_gnu(pj *PlotJob, num int, title string) *Result {
 	if scales < 2 {
 		offset = 0.1
 	}
+	fmt.Fprintln(plt.file, "set key outside")
 	fmt.Fprintf(plt.file, "set title \"%s\"\n", title)
 	fmt.Fprintf(plt.file, "set lmargin screen %f\n", offset)
 	fmt.Fprintf(plt.file, "set xrange [%f:%f]\n", plt.x0, plt.x0+plt.dx*float64(plt.xnum-1))
@@ -495,7 +496,7 @@ func (plt *Plotter) plot_gnu(pj *PlotJob, num int, title string) *Result {
 	}
 	fmt.Fprintln(plt.file, ")")
 	fmt.Fprintln(plt.file, "set yrange[0:1]")
-	fmt.Fprintln(plt.file, "set term svg")
+	fmt.Fprintln(plt.file, "set term svg size 700,500")
 	fmt.Fprintf(plt.file, "set output \"%s_(%d).svg\"\n", plt.base, num)
 	fmt.Fprintf(plt.file, "plot ")
 	for i, label := range list {
