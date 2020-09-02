@@ -337,11 +337,14 @@ func init() {
 			//----------------------------------------------------------
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				var (
-					name   *Name    // name of first argument (rate)
 					a, b   Variable // values for rate and delay
 					l1, r1 Variable // internal values (level, rate)
 					dt     Variable // time-step
 				)
+				// get value of first argument
+				if a, res = resolve(args[0], mdl); !res.Ok {
+					return
+				}
 				// get value of second argument
 				if b, res = resolve(args[1], mdl); !res.Ok {
 					return
@@ -350,32 +353,17 @@ func init() {
 				if dt, res = resolve("DT", mdl); !res.Ok {
 					return
 				}
-				// get value of first argument
-				if a, res = resolve(args[0], mdl); !res.Ok {
-					// if it is missing, we are initializing (no previous state):
-					// get the current value of the variable
-					if name, res = NewNameFromString(args[0]); !res.Ok {
-						return
-					}
-					name.Stage = NAME_STAGE_NEW
-					if a, res = mdl.Get(name); !res.Ok {
-						// we need to compute an initial value for 'name'
-						if a, res = mdl.Initial(name.Name); !res.Ok {
-							return
-						}
-					}
-					// perform initialization
+				// get old internal state
+				if l1, res = resolve(args[2], mdl); !res.Ok {
+					// no state available: perform initialization
 					mdl.Current[args[2]] = a * b
 					mdl.Current[args[3]] = a
 					val = a
+					res = Success()
 					return
 				}
-				// get old internal state
-				if l1, res = resolve(args[2], mdl); !res.Ok {
-					l1 = a * b
-				}
 				if r1, res = resolve(args[3], mdl); !res.Ok {
-					r1 = a
+					return
 				}
 				// compute new internal state
 				l1 += dt * (a - r1)
@@ -409,13 +397,16 @@ func init() {
 			//----------------------------------------------------------
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				var (
-					name   *Name    // name of first argument (rate)
 					a, b   Variable // value of rate and delay (arguments)
 					l1, r1 Variable // internal variables (#1)
 					l2, r2 Variable // internal variables (#2)
 					l3, r3 Variable // internal variables (#3)
 					dl, dt Variable // delay and time-step
 				)
+				// get value of first argument
+				if a, res = resolve(args[0], mdl); !res.Ok {
+					return
+				}
 				// get value of second argument
 				if b, res = resolve(args[1], mdl); !res.Ok {
 					return
@@ -424,21 +415,9 @@ func init() {
 				if dt, res = resolve("DT", mdl); !res.Ok {
 					return
 				}
-				// get value of first argument
-				if a, res = resolve(args[0], mdl); !res.Ok {
-					// if it is missing, we are initializing (no previous state):
-					// get the current value of the variable
-					if name, res = NewNameFromString(args[0]); !res.Ok {
-						return
-					}
-					name.Stage = NAME_STAGE_NEW
-					if a, res = mdl.Get(name); !res.Ok {
-						// we need to compute an initial value for 'name'
-						if a, res = mdl.Initial(name.Name); !res.Ok {
-							return
-						}
-					}
-					// perform initialization
+				// get old internal state
+				if l1, res = resolve(args[2], mdl); !res.Ok {
+					// no state available: perform initialization
 					l1 = a * (b / 3.)
 					mdl.Current[args[2]] = l1
 					mdl.Current[args[3]] = a
@@ -447,10 +426,7 @@ func init() {
 					mdl.Current[args[6]] = l1
 					mdl.Current[args[7]] = a
 					val = a
-					return
-				}
-				// get old internal state
-				if l1, res = resolve(args[2], mdl); !res.Ok {
+					res = Success()
 					return
 				}
 				if r1, res = resolve(args[3], mdl); !res.Ok {
