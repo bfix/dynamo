@@ -497,10 +497,13 @@ func init() {
 			NumVars:  1,
 			DepModes: []int{DEP_SKIP, DEP_NORMAL},
 			Check: func(args []ast.Expr) *Result {
-				// the first variable must be of kind LEVEL from NEW state
+				// the first variable must be of kind LEVEL,RATE or AUX from NEW state
 				n, res := NewName(args[0])
 				if !res.Ok {
 					return res
+				}
+				if n.Stage != NAME_STAGE_NEW {
+					return Failure(ErrModelFunction+": SMOOTH --  %s%s not new", n.Name, n.GetIndex())
 				}
 				if n.Kind != NAME_KIND_LEVEL &&
 					n.Kind != NAME_KIND_RATE &&
@@ -514,11 +517,14 @@ func init() {
 			//----------------------------------------------------------
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				var (
-					name *Name    // name of first argument (level)
 					a, b Variable // values for level and delay
 					v1   Variable // internal value
 					dt   Variable // time-step
 				)
+				// get value of first argument
+				if a, res = resolve(args[0], mdl); !res.Ok {
+					return
+				}
 				// get value of second argument
 				if b, res = resolve(args[1], mdl); !res.Ok {
 					return
@@ -527,26 +533,12 @@ func init() {
 				if dt, res = resolve("DT", mdl); !res.Ok {
 					return
 				}
-				// get value of first argument
-				if name, res = NewNameFromString(args[0]); !res.Ok {
-					return
-				}
-				name.Stage = NAME_STAGE_OLD
-				if a, res = mdl.Get(name); !res.Ok {
-					// if it is missing, we are initializing (no previous state):
-					name.Stage = NAME_STAGE_NEW
-					if a, res = mdl.Get(name); !res.Ok {
-						// we need to compute an initial value for 'name'
-						if a, res = mdl.Initial(name.Name); !res.Ok {
-							return
-						}
-					}
-					mdl.Current[args[2]] = a
-					val = a
-					return
-				}
 				// get old internal state
 				if v1, res = resolve(args[2], mdl); !res.Ok {
+					// no internal state: initializing...
+					mdl.Current[args[2]] = a
+					val = a
+					res = Success()
 					return
 				}
 				// compute new internal state
@@ -579,11 +571,14 @@ func init() {
 			//----------------------------------------------------------
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				var (
-					name           *Name    // name of first argument (level)
 					a, b           Variable // values for level and delay
 					v1, v2, v3, v4 Variable // internal values
 					dt             Variable // time-step
 				)
+				// get value of first argument
+				if a, res = resolve(args[0], mdl); !res.Ok {
+					return
+				}
 				// get value of second argument
 				if b, res = resolve(args[1], mdl); !res.Ok {
 					return
@@ -592,30 +587,15 @@ func init() {
 				if dt, res = resolve("DT", mdl); !res.Ok {
 					return
 				}
-				// get value of first argument
-				// get value of first argument
-				if name, res = NewNameFromString(args[0]); !res.Ok {
-					return
-				}
-				name.Stage = NAME_STAGE_OLD
-				if a, res = mdl.Get(name); !res.Ok {
-					// if it is missing, we are initializing (no previos state):
-					name.Stage = NAME_STAGE_NEW
-					if a, res = mdl.Get(name); !res.Ok {
-						// we need to compute an initial value for 'name'
-						if a, res = mdl.Initial(name.Name); !res.Ok {
-							return
-						}
-					}
+				// get old internal state
+				if v1, res = resolve(args[2], mdl); !res.Ok {
+					// no internal state: initializing...
 					mdl.Current[args[2]] = a
 					mdl.Current[args[3]] = a
 					mdl.Current[args[4]] = a
 					mdl.Current[args[5]] = b / 3.
 					val = a
-					return
-				}
-				// get old internal state
-				if v1, res = resolve(args[2], mdl); !res.Ok {
+					res = Success()
 					return
 				}
 				if v2, res = resolve(args[3], mdl); !res.Ok {
@@ -761,12 +741,16 @@ func (tbl *Table) Newton(x Variable) Variable {
 // resolve returns a value from a number string or variable name
 func resolve(x string, mdl *Model) (val Variable, res *Result) {
 	if v, err := strconv.ParseFloat(x, 64); err == nil {
+		// variable is a number
 		val, res = Variable(v), Success()
 	} else {
 		var name *Name
 		if name, res = NewNameFromString(x); res.Ok {
 			if val, res = mdl.Get(name); !res.Ok {
-				val, res = mdl.Initial(name.Name)
+				if name.Name[0] != '_' {
+					// get initial value for non-interbal variables
+					val, res = mdl.Initial(name.Name)
+				}
 			}
 		}
 	}
