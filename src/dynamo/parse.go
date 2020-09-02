@@ -80,12 +80,13 @@ func (mdl *Model) Parse(rdr io.Reader) (res *Result) {
 		if pos := strings.Index(input, " "); pos != -1 {
 			stmt.Mode = input[:pos]
 			input = strings.TrimSpace(input[pos:])
-			if pos := strings.Index(input, " "); pos != -1 {
-				stmt.Stmt = input[:pos]
-				stmt.Comment = compact(input[pos:])
-			} else {
-				stmt.Stmt = input
-				stmt.Comment = ""
+			stmt.Stmt = input
+			stmt.Comment = ""
+			if strings.Contains("CNARLST", stmt.Mode) {
+				if pos := strings.Index(input, " "); pos != -1 {
+					stmt.Stmt = input[:pos]
+					stmt.Comment = compact(input[pos:])
+				}
 			}
 			res = mdl.AddStatement(stmt).SetLine(stmtNo)
 		}
