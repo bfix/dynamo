@@ -493,12 +493,16 @@ func init() {
 			//----------------------------------------------------------
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				var (
-					a, b Variable // values for level and delay
-					v1   Variable // internal value
-					dt   Variable // time-step
+					vname string   // variable name
+					a, b  Variable // values for level and delay
+					v1    Variable // internal value
+					dt    Variable // time-step
 				)
 				// get value of first argument
-				if a, res = resolve(args[0], mdl); !res.Ok {
+				if vname, res = asOld(args[0]); !res.Ok {
+					return
+				}
+				if a, res = resolve(vname, mdl); !res.Ok {
 					return
 				}
 				// get value of second argument
@@ -547,12 +551,16 @@ func init() {
 			//----------------------------------------------------------
 			Eval: func(args []string, mdl *Model) (val Variable, res *Result) {
 				var (
+					vname          string   // variable name
 					a, b           Variable // values for level and delay
 					v1, v2, v3, v4 Variable // internal values
 					dt             Variable // time-step
 				)
 				// get value of first argument
-				if a, res = resolve(args[0], mdl); !res.Ok {
+				if vname, res = asOld(args[0]); !res.Ok {
+					return
+				}
+				if a, res = resolve(vname, mdl); !res.Ok {
 					return
 				}
 				// get value of second argument
@@ -714,6 +722,20 @@ func (tbl *Table) Newton(x Variable) Variable {
 // Implementation of Dynamo functions
 //======================================================================
 
+// asOld returns the old index notation for a variable, so e.g.
+// "L.K" becomes "L.J" and "R.KL" becomes "R.JK"
+func asOld(v string) (string, *Result) {
+	name, res := NewNameFromString(v)
+	if !res.Ok {
+		return "", res
+	}
+	if name.Stage != NAME_STAGE_OLD {
+		name.Stage = NAME_STAGE_OLD
+		return name.Name + name.GetIndex(), res
+	}
+	return v, res
+}
+
 // resolve returns a value from a number string or variable name
 func resolve(x string, mdl *Model) (val Variable, res *Result) {
 	if v, err := strconv.ParseFloat(x, 64); err == nil {
@@ -724,7 +746,7 @@ func resolve(x string, mdl *Model) (val Variable, res *Result) {
 		if name, res = NewNameFromString(x); res.Ok {
 			if val, res = mdl.Get(name); !res.Ok {
 				if name.Name[0] != '_' {
-					// get initial value for non-interbal variables
+					// get initial value for non-internal variables
 					val, res = mdl.Initial(name.Name)
 				}
 			}
