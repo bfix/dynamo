@@ -52,15 +52,50 @@ func (l *Line) String() string {
 // Parse a DYNAMO source file and return a model instance for it.
 func (mdl *Model) Parse(rdr io.Reader) (res *Result) {
 	res = Success()
+
+	// compact string (trim and remove double spaces)
+	compact := func(s string) string {
+		s = strings.TrimSpace(s)
+		for strings.Contains(s, "  ") {
+			s = strings.Replace(s, "  ", " ", -1)
+		}
+		return s
+	}
+
+	// parse a single (complete) line of model code
+	var (
+		input  string
+		lineNo int
+		stmtNo int
+	)
+	parseInput := func() (res *Result) {
+		res = Success()
+		// skip empty input line
+		if len(input) == 0 {
+			return
+		}
+		// create new statement
+		stmt := new(Line)
+		// dissect inout
+		if pos := strings.Index(input, " "); pos != -1 {
+			stmt.Mode = input[:pos]
+			input = strings.TrimSpace(input[pos:])
+			if pos := strings.Index(input, " "); pos != -1 {
+				stmt.Stmt = input[:pos]
+				stmt.Comment = compact(input[pos:])
+			} else {
+				stmt.Stmt = input
+				stmt.Comment = ""
+			}
+			res = mdl.AddStatement(stmt).SetLine(stmtNo)
+		}
+		input = ""
+		return
+	}
+
 	// parse source stream
 	brdr := bufio.NewReader(rdr)
-	var (
-		stmt    *Line
-		stmtNo  int
-		mode    string
-		comment string
-	)
-	lineNo := 0
+	lineNo = 0
 	for {
 		// read next line and check length limit
 		data, _, err := brdr.ReadLine()
@@ -73,7 +108,7 @@ func (mdl *Model) Parse(rdr io.Reader) (res *Result) {
 		if err != nil {
 			if err == io.EOF {
 				// add last pending statement
-				res = mdl.AddStatement(stmt).SetLine(stmtNo)
+				res = parseInput()
 			} else {
 				res = Failure(err).SetLine(lineNo)
 			}
@@ -81,38 +116,20 @@ func (mdl *Model) Parse(rdr io.Reader) (res *Result) {
 		}
 		// process line
 		line := strings.ToUpper(string(data))
-		if pos := strings.Index(line, " "); pos != -1 {
-			mode = line[:pos]
-			line = strings.TrimSpace(line[pos:])
-			if strings.Index("LRCNA", mode) != -1 {
-				if pos := strings.Index(line, " "); pos != -1 {
-					comment = strings.TrimSpace(line[pos:])
-					line = line[:pos]
-				} else {
-					comment = ""
-				}
-			}
-		} else {
-			mode = line
-			line = ""
-		}
-		// extension line (continuation)?
-		if mode == "X" {
-			stmt.Stmt += line
-			if len(comment) > 0 {
-				stmt.Comment += " " + comment
-			}
+		if len(line) == 0 {
+			// skip empty lines
 			continue
 		}
-		// process pending statement
-		if res = mdl.AddStatement(stmt); !res.Ok {
-			res.SetLine(stmtNo)
+		// check for continuation line
+		if line[0] == 'X' {
+			input += line[1:]
+			continue
+		}
+		// process pending input
+		if res = parseInput(); !res.Ok {
 			break
 		}
-		stmt = new(Line)
-		stmt.Mode = mode
-		stmt.Stmt = line
-		stmt.Comment = comment
+		input = line
 		stmtNo = lineNo
 	}
 	res.SetLine(lineNo)
