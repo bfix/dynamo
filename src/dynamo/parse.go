@@ -122,7 +122,7 @@ func (mdl *Model) Parse(rdr io.Reader) (res *Result) {
 		}
 		// check for continuation line
 		if line[0] == 'X' {
-			input += line[1:]
+			input += strings.TrimSpace(line[1:])
 			continue
 		}
 		// process pending input
