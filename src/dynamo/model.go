@@ -382,6 +382,7 @@ func (mdl *Model) IsSystem(name string) bool {
 // Initial returns an initial value for a quantity as calculated by the model.
 func (mdl *Model) Initial(name string) (val Variable, res *Result) {
 	// find equation for quantity
+	Dbg.Msgf("Find initial value for %s\n", name)
 	if eqn := mdl.Eqns.Find(name); eqn != nil {
 		val, res = eqn.Eval(mdl)
 	} else {
@@ -564,7 +565,6 @@ loop:
 	// Running the model
 	Msg("      Iterating epochs...")
 	dt := mdl.Current["DT"]
-	length := mdl.Current["LENGTH"]
 	time, ok := mdl.Current["TIME"]
 	if !ok {
 		time = 0.0
@@ -572,7 +572,7 @@ loop:
 	}
 
 	epoch := 1
-	for t := time; t <= length; epoch, t = epoch+1, t+dt {
+	for t := time; t <= mdl.Current["LENGTH"]; epoch, t = epoch+1, t+dt {
 		// compute auxiliaries, rates and supplements
 		if res = compute("ARS", runEqns); !res.Ok {
 			break
