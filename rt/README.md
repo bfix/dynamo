@@ -21,7 +21,7 @@ Liverpool John Moores University.
 ### World Dynamics
 
 In his book "**World Dynamics**" (published in 1971)
-[J.W. Forrester][https://en.wikipedia.org/wiki/Jay_Wright_Forrester)
+[J.W. Forrester](https://en.wikipedia.org/wiki/Jay_Wright_Forrester)
 designed a model to simulate the system dynamics of the world's population,
 food supply, natural resources, pollution and many other key features. This
 model - called **WORLD2** - was written in DYNAMO and published in the book
