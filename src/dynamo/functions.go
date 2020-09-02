@@ -478,9 +478,6 @@ func init() {
 				if !res.Ok {
 					return res
 				}
-				if n.Stage != NAME_STAGE_NEW {
-					return Failure(ErrModelFunction+": SMOOTH --  %s%s not new", n.Name, n.GetIndex())
-				}
 				if n.Kind != NAME_KIND_LEVEL &&
 					n.Kind != NAME_KIND_RATE &&
 					n.Kind != NAME_KIND_AUX {
