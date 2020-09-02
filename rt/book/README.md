@@ -131,7 +131,8 @@ randomness; re-running the model would also generate a different graph.
 
 ## prison
 
-A **simple model for prison population** is described on pages 181-185:
+This is a **simple model for prison population** as described on pages
+181-185; the model listing can be found on pages 211-213:
 
 <table>
 <tr>
@@ -153,3 +154,18 @@ A **simple model for prison population** is described on pages 181-185:
 </tr>
 </table>
 
+## project
+
+Designing and implementing a **simple project model** is described in the book
+on pages 190 to 213; the model code can be found on pages 211 to 213:
+
+<table>
+<tr>
+<td width="30%" valign="top">
+  <img src="plots/project_(1).svg" alt="project.dynamo graph" />
+  <p>Base run of the project model (Page 210, Figure 4.32)</p>
+</td>
+<td width="30%" valign="top">
+</td>
+</tr>
+</table>
