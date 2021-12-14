@@ -2,7 +2,7 @@ package dynamo
 
 //----------------------------------------------------------------------
 // This file is part of Dynamo.
-// Copyright (C) 2011-2020 Bernd Fix
+// Copyright (C) 2020-2021 Bernd Fix
 //
 // Dynamo is free software: you can redistribute it and/or modify it
 // under the terms of the GNU Affero General Public License as published
@@ -55,12 +55,11 @@ type Equation struct {
 
 // NewEquation converts a statement into one or more equation instances
 func NewEquation(stmt *Line) (eqns *EqnList, res *Result) {
-	res = Success()
 	eqns = NewEqnList()
 	Dbg.Msgf("NewEquation(%s)\n", stmt.String())
 
 	// check for spaces in equation
-	if strings.Index(stmt.Stmt, " ") != -1 {
+	if strings.Contains(stmt.Stmt, " ") {
 		res = Failure(ErrParseInvalidSpace)
 		return
 	}
@@ -370,6 +369,7 @@ func eval(expr ast.Expr, mdl *Model, missing map[string]*Name) (val Variable, re
 					val = -val
 				default:
 					res = Failure(ErrParseInvalidOp+": %d", x.Op)
+					return
 				}
 				args[i] = val.String()
 			default:

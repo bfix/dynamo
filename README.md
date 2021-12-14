@@ -2,7 +2,7 @@
 dynamo: Interpreter for the DYNAMO programming language
 =======================================================
 
-(c) 2020 Bernd Fix <brf@hoi-polloi.org>   >Y<
+(c) 2020,2021 Bernd Fix <brf@hoi-polloi.org>   >Y<
 
 Dynamo is free software: you can redistribute it and/or modify it
 under the terms of the GNU Affero General Public License as published
@@ -86,12 +86,17 @@ interpreter.
 At the moment no pre-built binaries of the DYNAMO interpreter are provided; to
 build the application, you need a working installation of Go
 (https://golang.org/) on your computer; make sure your Go installation is
-up-to-date (at least Go1.11).
+up-to-date (at least Go1.11; Go1.17 recommended).
 
-In the base directory of this repository issue the following command:
+In the base directory of this repository issue the following commands:
 
 ```bash
-GOPATH=$(pwd) go build -o dynamo src/cmd/dynamo/main.go
+# install dependencies
+go mod tidy
+# build library
+go build
+# install interpreter
+go install github.com/bfix/dynamo/cmd/dynamo
 ```
 
 ### Running a DYNAMO model

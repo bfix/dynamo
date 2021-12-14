@@ -2,7 +2,7 @@ package dynamo
 
 //----------------------------------------------------------------------
 // This file is part of Dynamo.
-// Copyright (C) 2011-2020 Bernd Fix
+// Copyright (C) 2020-2021 Bernd Fix
 //
 // Dynamo is free software: you can redistribute it and/or modify it
 // under the terms of the GNU Affero General Public License as published
@@ -126,9 +126,7 @@ func (el *EqnList) Add(eqn *Equation) {
 
 // AddList appends an equation list.
 func (el *EqnList) AddList(list *EqnList) {
-	for _, eqn := range list.eqns {
-		el.eqns = append(el.eqns, eqn)
-	}
+	el.eqns = append(el.eqns, list.eqns...)
 }
 
 // List returns iterable equations.
@@ -229,7 +227,6 @@ func newEntry(i int, name string) *eqnEntry {
 
 // SortEquations sorts an equation list "topologically" based on dependencies.
 func (el *EqnList) Sort(mdl *Model) (eqns *EqnList, res *Result) {
-	res = Success()
 	eqns = NewEqnList()
 
 	// Kahn's algorithm (1962) is used for sorting.
@@ -279,9 +276,7 @@ func (el *EqnList) Sort(mdl *Model) (eqns *EqnList, res *Result) {
 			L = append(L, n)
 			var newGraph []*eqnEntry
 			for _, m := range graph {
-				if _, ok := m.deps[n.pos]; ok {
-					delete(m.deps, n.pos)
-				}
+				delete(m.deps, n.pos)
 				if len(m.deps) == 0 {
 					S = append(S, m)
 				} else {
@@ -316,17 +311,17 @@ func (el *EqnList) Sort(mdl *Model) (eqns *EqnList, res *Result) {
 	for i, eqn := range el.eqns {
 		name := eqn.Target.Name
 		Dbg.Msgf("SortEquations << [%d] %s\n", i, eqn.String())
-		if strings.Index("CN", eqn.Mode) != -1 {
+		if strings.Contains("CN", eqn.Mode) {
 			if _, ok := eqnInit[name]; ok {
 				return nil, Failure(ErrModelVariabeExists+": [1] %s", name)
 			}
 			eqnInit[name] = newEntry(i, name)
-		} else if strings.Index("ARL", eqn.Mode) != -1 {
+		} else if strings.Contains("ARL", eqn.Mode) {
 			if _, ok := eqnRun[name]; ok {
 				return nil, Failure(ErrModelVariabeExists+": [2] %s", name)
 			}
 			eqnRun[name] = newEntry(i, name)
-		} else if strings.Index("S", eqn.Mode) != -1 {
+		} else if strings.Contains("S", eqn.Mode) {
 			if _, ok := eqnSuppl[name]; ok {
 				return nil, Failure(ErrModelVariabeExists+": [3] %s", name)
 			}
@@ -448,8 +443,8 @@ func (el *EqnList) validateEqn(mdl *Model, eqn *Equation, list map[string]*Equat
 		res = check(
 			&Class{NAME_KIND_INIT, NAME_STAGE_NONE},
 			[]*Class{
-				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
-				&Class{NAME_KIND_INIT, NAME_STAGE_NONE},  // initializers
+				{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
+				{NAME_KIND_INIT, NAME_STAGE_NONE},  // initializers
 			})
 		if !res.Ok {
 			Msgf("   WARN: %s\n", res.Err.Error())
@@ -460,22 +455,22 @@ func (el *EqnList) validateEqn(mdl *Model, eqn *Equation, list map[string]*Equat
 		res = check(
 			&Class{NAME_KIND_LEVEL, NAME_STAGE_NEW},
 			[]*Class{
-				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
-				&Class{NAME_KIND_INIT, NAME_STAGE_NONE},  // initializers
-				&Class{NAME_KIND_LEVEL, NAME_STAGE_OLD},  // levels
-				&Class{NAME_KIND_AUX, NAME_STAGE_OLD},    // auxilliaries
-				&Class{NAME_KIND_RATE, NAME_STAGE_OLD},   // rates
+				{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
+				{NAME_KIND_INIT, NAME_STAGE_NONE},  // initializers
+				{NAME_KIND_LEVEL, NAME_STAGE_OLD},  // levels
+				{NAME_KIND_AUX, NAME_STAGE_OLD},    // auxilliaries
+				{NAME_KIND_RATE, NAME_STAGE_OLD},   // rates
 			})
 	case "R":
 		// Rate eqn.:  R.KL = {C, A.K, L.K, R.JK}
 		res = check(
 			&Class{NAME_KIND_RATE, NAME_STAGE_NEW},
 			[]*Class{
-				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
-				&Class{NAME_KIND_INIT, NAME_STAGE_NONE},  // initializers
-				&Class{NAME_KIND_LEVEL, NAME_STAGE_NEW},  // levels
-				&Class{NAME_KIND_AUX, NAME_STAGE_NEW},    // auxilliaries
-				&Class{NAME_KIND_RATE, NAME_STAGE_OLD},   // rates
+				{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
+				{NAME_KIND_INIT, NAME_STAGE_NONE},  // initializers
+				{NAME_KIND_LEVEL, NAME_STAGE_NEW},  // levels
+				{NAME_KIND_AUX, NAME_STAGE_NEW},    // auxilliaries
+				{NAME_KIND_RATE, NAME_STAGE_OLD},   // rates
 			})
 		if !res.Ok {
 			Msgf("   WARN: %s\n", res.Err.Error())
@@ -486,23 +481,23 @@ func (el *EqnList) validateEqn(mdl *Model, eqn *Equation, list map[string]*Equat
 		res = check(
 			&Class{NAME_KIND_AUX, NAME_STAGE_NEW},
 			[]*Class{
-				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
-				&Class{NAME_KIND_INIT, NAME_STAGE_NONE},  // initializers
-				&Class{NAME_KIND_AUX, NAME_STAGE_NEW},    // auxilliaries
-				&Class{NAME_KIND_LEVEL, NAME_STAGE_NEW},  // levels
-				&Class{NAME_KIND_RATE, NAME_STAGE_OLD},   // rates
+				{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
+				{NAME_KIND_INIT, NAME_STAGE_NONE},  // initializers
+				{NAME_KIND_AUX, NAME_STAGE_NEW},    // auxilliaries
+				{NAME_KIND_LEVEL, NAME_STAGE_NEW},  // levels
+				{NAME_KIND_RATE, NAME_STAGE_OLD},   // rates
 			})
 	case "S":
 		// Supplementary eqn.:  S.K = [C, S.K, L.K, A.K, R.JK}
 		res = check(
 			&Class{NAME_KIND_SUPPL, NAME_STAGE_NEW},
 			[]*Class{
-				&Class{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
-				&Class{NAME_KIND_INIT, NAME_STAGE_NONE},  // initializers
-				&Class{NAME_KIND_AUX, NAME_STAGE_NEW},    // auxilieries
-				&Class{NAME_KIND_LEVEL, NAME_STAGE_NEW},  // levels
-				&Class{NAME_KIND_SUPPL, NAME_STAGE_NEW},  // supplements
-				&Class{NAME_KIND_RATE, NAME_STAGE_OLD},   // rates
+				{NAME_KIND_CONST, NAME_STAGE_NONE}, // constants
+				{NAME_KIND_INIT, NAME_STAGE_NONE},  // initializers
+				{NAME_KIND_AUX, NAME_STAGE_NEW},    // auxilieries
+				{NAME_KIND_LEVEL, NAME_STAGE_NEW},  // levels
+				{NAME_KIND_SUPPL, NAME_STAGE_NEW},  // supplements
+				{NAME_KIND_RATE, NAME_STAGE_OLD},   // rates
 			})
 	}
 	return

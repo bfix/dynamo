@@ -502,7 +502,7 @@ func (plt *Plotter) plot_gnu(pj *PlotJob, num int, title string) *Result {
 	for i, label := range list {
 		mode := fmt.Sprintf("with line ls %d", (i%10)+1)
 		pv := plt.vars[label]
-		if strings.Index("*#", string(pv.Sym)) != -1 {
+		if strings.Contains("*#", string(pv.Sym)) {
 			mode = "with point"
 		}
 		if i > 0 {

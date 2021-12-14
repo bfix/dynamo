@@ -51,8 +51,6 @@ func (l *Line) String() string {
 
 // Parse a DYNAMO source file and return a model instance for it.
 func (mdl *Model) Parse(rdr io.Reader) (res *Result) {
-	res = Success()
-
 	// compact string (trim and remove double spaces)
 	compact := func(s string) string {
 		s = strings.TrimSpace(s)

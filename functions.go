@@ -2,7 +2,7 @@ package dynamo
 
 //----------------------------------------------------------------------
 // This file is part of Dynamo.
-// Copyright (C) 2011-2020 Bernd Fix
+// Copyright (C) 2020-2021 Bernd Fix
 //
 // Dynamo is free software: you can redistribute it and/or modify it
 // under the terms of the GNU Affero General Public License as published
@@ -54,7 +54,7 @@ func init() {
 		//--------------------------------------------------------------
 		// Mathematical functions
 		//--------------------------------------------------------------
-		"SQRT": &Function{
+		"SQRT": {
 			NumArgs:  1,
 			NumVars:  0,
 			DepModes: []int{DEP_NORMAL},
@@ -66,7 +66,7 @@ func init() {
 				return
 			},
 		},
-		"SIN": &Function{
+		"SIN": {
 			NumArgs:  1,
 			NumVars:  0,
 			DepModes: []int{DEP_NORMAL},
@@ -78,7 +78,7 @@ func init() {
 				return
 			},
 		},
-		"COS": &Function{
+		"COS": {
 			NumArgs:  1,
 			NumVars:  0,
 			DepModes: []int{DEP_NORMAL},
@@ -90,7 +90,7 @@ func init() {
 				return
 			},
 		},
-		"EXP": &Function{
+		"EXP": {
 			NumArgs:  1,
 			NumVars:  0,
 			DepModes: []int{DEP_NORMAL},
@@ -102,7 +102,7 @@ func init() {
 				return
 			},
 		},
-		"LOG": &Function{
+		"LOG": {
 			NumArgs:  1,
 			NumVars:  0,
 			DepModes: []int{DEP_NORMAL},
@@ -114,7 +114,7 @@ func init() {
 				return
 			},
 		},
-		"MAX": &Function{
+		"MAX": {
 			NumArgs:  2,
 			NumVars:  0,
 			DepModes: []int{DEP_NORMAL, DEP_NORMAL},
@@ -133,7 +133,7 @@ func init() {
 				return
 			},
 		},
-		"MIN": &Function{
+		"MIN": {
 			NumArgs:  2,
 			NumVars:  0,
 			DepModes: []int{DEP_NORMAL, DEP_NORMAL},
@@ -152,7 +152,7 @@ func init() {
 				return
 			},
 		},
-		"CLIP": &Function{
+		"CLIP": {
 			NumArgs:  4,
 			NumVars:  0,
 			DepModes: []int{DEP_NORMAL, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL},
@@ -175,7 +175,7 @@ func init() {
 				return
 			},
 		},
-		"SWITCH": &Function{
+		"SWITCH": {
 			NumArgs:  3,
 			NumVars:  0,
 			DepModes: []int{DEP_NORMAL, DEP_NORMAL, DEP_NORMAL},
@@ -199,7 +199,7 @@ func init() {
 		//--------------------------------------------------------------
 		// Generating functions
 		//--------------------------------------------------------------
-		"STEP": &Function{
+		"STEP": {
 			NumArgs:  2,
 			NumVars:  0,
 			DepModes: []int{DEP_NORMAL, DEP_NORMAL},
@@ -220,7 +220,7 @@ func init() {
 				return
 			},
 		},
-		"RAMP": &Function{
+		"RAMP": {
 			NumArgs:  2,
 			NumVars:  0,
 			DepModes: []int{DEP_NORMAL, DEP_NORMAL},
@@ -239,7 +239,7 @@ func init() {
 				return
 			},
 		},
-		"PULSE": &Function{
+		"PULSE": {
 			NumArgs:  3,
 			NumVars:  0,
 			DepModes: []int{DEP_NORMAL, DEP_NORMAL, DEP_NORMAL},
@@ -261,7 +261,7 @@ func init() {
 				return
 			},
 		},
-		"NOISE": &Function{
+		"NOISE": {
 			NumArgs:  0,
 			NumVars:  0,
 			DepModes: nil,
@@ -275,7 +275,7 @@ func init() {
 		//--------------------------------------------------------------
 		// TABLE functions
 		//--------------------------------------------------------------
-		"TABLE": &Function{
+		"TABLE": {
 			NumArgs:  5,
 			NumVars:  1,
 			DepModes: []int{DEP_SKIP, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL},
@@ -284,7 +284,7 @@ func init() {
 				return table(args, mdl, 0)
 			},
 		},
-		"TABHL": &Function{
+		"TABHL": {
 			NumArgs:  5,
 			NumVars:  0,
 			DepModes: []int{DEP_SKIP, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL},
@@ -293,7 +293,7 @@ func init() {
 				return table(args, mdl, 0)
 			},
 		},
-		"TABXT": &Function{
+		"TABXT": {
 			NumArgs:  5,
 			NumVars:  1,
 			DepModes: []int{DEP_SKIP, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL},
@@ -302,7 +302,7 @@ func init() {
 				return table(args, mdl, 1)
 			},
 		},
-		"TABPL": &Function{
+		"TABPL": {
 			NumArgs:  5,
 			NumVars:  1,
 			DepModes: []int{DEP_SKIP, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL, DEP_NORMAL},
@@ -314,7 +314,7 @@ func init() {
 		//--------------------------------------------------------------
 		// DELAY functions
 		//--------------------------------------------------------------
-		"DELAY1": &Function{
+		"DELAY1": {
 			NumArgs:  2,
 			NumVars:  2,
 			DepModes: []int{DEP_ENFORCE, DEP_NORMAL},
@@ -374,7 +374,7 @@ func init() {
 				return r1, Success()
 			},
 		},
-		"DELAY3": &Function{
+		"DELAY3": {
 			NumArgs:  2,
 			NumVars:  6,
 			DepModes: []int{DEP_ENFORCE, DEP_NORMAL},
@@ -468,7 +468,7 @@ func init() {
 		//--------------------------------------------------------------
 		// SMOOTH functions
 		//--------------------------------------------------------------
-		"SMOOTH": &Function{
+		"SMOOTH": {
 			NumArgs:  2,
 			NumVars:  1,
 			DepModes: []int{DEP_SKIP, DEP_NORMAL},
@@ -525,7 +525,7 @@ func init() {
 				return v1, Success()
 			},
 		},
-		"DLINF3": &Function{
+		"DLINF3": {
 			NumArgs:  2,
 			NumVars:  4,
 			DepModes: []int{DEP_NORMAL, DEP_NORMAL},
@@ -633,7 +633,6 @@ func HasFunction(name string, args []ast.Expr) ([]int, []ast.Expr, *Result) {
 
 // CallFunction executes a function call with given arguments
 func CallFunction(name string, args []string, mdl *Model) (val Variable, res *Result) {
-	res = Success()
 	val = 0.0
 
 	// lookup built-in function

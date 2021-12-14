@@ -2,7 +2,7 @@ package main
 
 //----------------------------------------------------------------------
 // This file is part of Dynamo.
-// Copyright (C) 2011-2020 Bernd Fix
+// Copyright (C) 2020-2021 Bernd Fix
 //
 // Dynamo is free software: you can redistribute it and/or modify it
 // under the terms of the GNU Affero General Public License as published
@@ -24,15 +24,15 @@ import (
 	"flag"
 	"os"
 
-	"dynamo"
+	"github.com/bfix/dynamo"
 )
 
 // main entry point: call DYNAMO interpreter with given arguments
 func main() {
-	dynamo.Msg("-----------------------------------")
-	dynamo.Msg("DYNAMO interpreter v0.5  (20200830)")
-	dynamo.Msg("Copyright (C) 2020, Bernd Fix   >Y<")
-	dynamo.Msg("-----------------------------------")
+	dynamo.Msg("---------------------------------------")
+	dynamo.Msg("DYNAMO interpreter v0.6    (2021-12-14)")
+	dynamo.Msg("Copyright (C) 2020,2021 Bernd Fix   >Y<")
+	dynamo.Msg("---------------------------------------")
 
 	var (
 		debugFile string

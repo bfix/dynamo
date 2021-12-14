@@ -419,9 +419,7 @@ func (prt *Printer) print_csv(pj *PrintJob) (res *Result) {
 	var list []string
 	for col := 0; col < 20; col++ {
 		if pc, ok := pj.cols[col]; ok {
-			for _, name := range pc.Vars {
-				list = append(list, name)
-			}
+			list = append(list, pc.Vars...)
 		}
 	}
 	// emit header

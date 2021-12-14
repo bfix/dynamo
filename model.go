@@ -2,7 +2,7 @@ package dynamo
 
 //----------------------------------------------------------------------
 // This file is part of Dynamo.
-// Copyright (C) 2011-2020 Bernd Fix
+// Copyright (C) 2020-2021 Bernd Fix
 //
 // Dynamo is free software: you can redistribute it and/or modify it
 // under the terms of the GNU Affero General Public License as published
@@ -160,7 +160,7 @@ func (mdl *Model) AddStatement(stmt *Line) (res *Result) {
 		return
 	}
 	prepLine := func() *Result {
-		if strings.Index(line, " ") != -1 {
+		if strings.Contains(line, " ") {
 			if strict {
 				return Failure(ErrParseInvalidSpace)
 			} else {
@@ -367,11 +367,11 @@ func (mdl *Model) Set(name *Name, val Variable) (res *Result) {
 // IsSystem returns true for pre-defined system variables.
 func (mdl *Model) IsSystem(name string) bool {
 	// check for pre-defined variable names
-	if strings.Index("TIME,DT,LENGTH,PLTPER,PRTPER,", name+",") != -1 {
+	if strings.Contains("TIME,DT,LENGTH,PLTPER,PRTPER,", name+",") {
 		return true
 	}
 	// skip table names
-	for tbl, _ := range mdl.Tables {
+	for tbl := range mdl.Tables {
 		if name == tbl {
 			return true
 		}
@@ -397,8 +397,6 @@ func (mdl *Model) Initial(name string) (val Variable, res *Result) {
 
 // Run a DYNAMO model.
 func (mdl *Model) Run() (res *Result) {
-	res = Success()
-
 	// sort equations "topologically" after parsing
 	if mdl.Eqns, res = mdl.Eqns.Sort(mdl); !res.Ok {
 		return
@@ -492,19 +490,15 @@ loop:
 	//------------------------------------------------------------------
 	Msg("      Checking state...")
 
-	// keep a list of a variables (level,rate)
-	varList := make([]string, 0)
-
 	// Check if all levels have level equations
 	check := make(map[string]bool)
 	used := make(map[string]bool)
 	ok := true
-	for level, _ := range mdl.Current {
+	for level := range mdl.Current {
 		if level[0] == '_' {
 			continue
 		}
 		check[level] = false
-		varList = append(varList, level)
 	}
 	for _, eqn := range mdl.Eqns.List() {
 		for _, dep := range eqn.Dependencies {
@@ -513,7 +507,7 @@ loop:
 		for _, ref := range eqn.References {
 			used[ref.Name] = true
 		}
-		if strings.Index("CRA", eqn.Mode) != -1 {
+		if strings.Contains("CRA", eqn.Mode) {
 			check[eqn.Target.Name] = true
 			continue
 		}
@@ -547,7 +541,6 @@ loop:
 		if eqn.Mode != "R" {
 			continue
 		}
-		varList = append(varList, eqn.Target.Name)
 	}
 
 	// Start printer and plotter

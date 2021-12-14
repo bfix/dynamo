@@ -32,14 +32,13 @@ type testData struct {
 	lineno int      // lines processed
 	err    string   // parse error
 	run    bool     // run model?
-	status error    // runtime error
 }
 
 // testSet is a collection of all test cases
 var testSet = []*testData{
 	//------------------------------------------------------------------
 	// valid source code
-	&testData{
+	{
 		name: "mdl: ok",
 		src: []string{
 			"R CHNGE.KL=CONST*(ROOM-COFFEE.K)",
@@ -54,7 +53,7 @@ var testSet = []*testData{
 	},
 	//------------------------------------------------------------------
 	// Dependency loop detection
-	&testData{
+	{
 		name: "mdl: dependency loop",
 		src: []string{
 			"L INV.K=INV.J+DT*CHNG.JK+TEST.K",
@@ -67,7 +66,7 @@ var testSet = []*testData{
 	},
 	//------------------------------------------------------------------
 	// Missing mode
-	&testData{
+	{
 		name: "eqn: missing mode",
 		src: []string{
 			"INV.K=INV.J+DT*CHNG.JK",
@@ -78,7 +77,7 @@ var testSet = []*testData{
 	},
 	//------------------------------------------------------------------
 	// Bad mode
-	&testData{
+	{
 		name: "eqn: bad mode",
 		src: []string{
 			"Y INV.K=INV.J+DT*CHNG.JK",
@@ -89,7 +88,7 @@ var testSet = []*testData{
 	},
 	//------------------------------------------------------------------
 	// Syntax error in equation
-	&testData{
+	{
 		name: "eqn: syntax",
 		src: []string{
 			"L INV.K=INV.J+DT**CHNG.JK",
@@ -100,7 +99,7 @@ var testSet = []*testData{
 	},
 	//------------------------------------------------------------------
 	// Invalid target state (not NEW)
-	&testData{
+	{
 		name: "eqn: bad target stage",
 		src: []string{
 			"L INV.J=INV.K+DT*CHNG.JK",
@@ -110,7 +109,7 @@ var testSet = []*testData{
 	},
 	//------------------------------------------------------------------
 	// Duplicate equation
-	&testData{
+	{
 		name: "eqn: overwrite",
 		src: []string{
 			"L INV.K=INV.J+DT*CHNG.JK",
@@ -121,7 +120,7 @@ var testSet = []*testData{
 	},
 	//------------------------------------------------------------------
 	// Line too long
-	&testData{
+	{
 		name: "parse: line too long",
 		src: []string{
 			"L INV.K=INV.J+DT*CHNG.JK-COFFEE.J+(DT)(CHNG.JK)+CONST*(ROOM-COFFEE.K)+OFFSET",
@@ -131,7 +130,7 @@ var testSet = []*testData{
 	},
 	//------------------------------------------------------------------
 	// Invalid variable name (too long)
-	&testData{
+	{
 		name: "eqn: var name too long",
 		src: []string{
 			"L INVENTARLISTE.K=INVENTARLISTE.J+DT*CHNG.JK",
@@ -141,7 +140,7 @@ var testSet = []*testData{
 	},
 	//------------------------------------------------------------------
 	// Invalid variable index
-	&testData{
+	{
 		name: "eqn: bad var index",
 		src: []string{
 			"L INV.L=INV.J+DT*CHNG.JK",
@@ -151,7 +150,7 @@ var testSet = []*testData{
 	},
 	//------------------------------------------------------------------
 	// Wrong target kind for equation
-	&testData{
+	{
 		name: "eqn: bad var kind",
 		src: []string{
 			"R INV.K=INV.J+DT*CHNG.JK",
