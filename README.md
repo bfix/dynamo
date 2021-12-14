@@ -99,6 +99,9 @@ go build
 go install github.com/bfix/dynamo/cmd/dynamo
 ```
 
+The executable is available as `${GOPATH}/bin/dynamo`. Make sure that
+`${GOPATH}/bin` is included in `${PATH}` if you want to use it directly.
+
 ### Running a DYNAMO model
 
 Change into the `rt/` (runtime) folder; below that folder you can find sample
@@ -106,7 +109,7 @@ DYNAMO models to play around with. For example you can run the epidemic model
 with the following command:
 
 ```bash
-../dynamo -p ~/flu.prt book/flu.dynamo
+dynamo -p ~/flu.prt book/flu.dynamo
 ```
 
 This will run the `flu.dynamo` model and generate a print output in the file
